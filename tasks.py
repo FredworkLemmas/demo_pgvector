@@ -1,9 +1,36 @@
-from incite import task, task_namespace
+from invocate import task
+
+from lib.database import PgvectorDatabaseConnection
+from lib.settings import DemoSettingsProvider
 
 
-@task(namespace='this.that', name='the_other')
-def say_hi(c):
-    print("Hi!")
+@task(namespace='env', name='start')
+def start_docker_compose_env(c):
+    c.run('docker compose up -d --remove-orphans')
 
 
-ns = task_namespace()
+@task(namespace='env', name='stop')
+def stop_docker_compose_env(c):
+    c.run('docker compose down --remove-orphans')
+
+@task(
+    namespace='demo',
+    name='import',
+    iterable=['file'],
+    help={
+        'file': ('Files to import (may be used multiple times, e.g., '
+                 '--file file1.csv --file file2.csv)'),
+        'model': ('Model to use for importing (default: '
+                  'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B)')
+    }
+)
+def import_demo_data(c, file=None, model=None):
+    """Import demo data into PostgreSQL database"""
+    if not file:
+        print('No files provided. Exiting.')
+        return
+    settings_provider = DemoSettingsProvider()
+    connection = PgvectorDatabaseConnection.from_settings_provider(
+        settings_provider)
+    print(f'files: {file}')
+    print(f'model: {model}')

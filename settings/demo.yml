@@ -1,0 +1,7 @@
+---
+database:
+  host: pgdev
+  port: 6432
+  database: pgvector_demo
+  user: demo
+  password: demo
