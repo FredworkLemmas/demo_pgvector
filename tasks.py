@@ -14,18 +14,26 @@ def start_docker_compose_env(c):
 def stop_docker_compose_env(c):
     c.run('docker compose down --remove-orphans')
 
+
 @task(
     namespace='demo',
     name='import',
     iterable=['file'],
     help={
-        'file': ('Files to import (may be used multiple times, e.g., '
-                 '--file file1.csv --file file2.csv)'),
-        'model': ('Model to use for importing (default: '
-                  'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B)')
+        'file': (
+            'Files to import (may be used multiple times, e.g., '
+            '--file file1.csv --file file2.csv)'
+        ),
+        'model': (
+            'Model to use for importing (default: '
+            'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B)'
+        ),
+        'embedding-dim': (
+            'Embedding dimension to use for importing (default: 1536)'
+        )
     }
 )
-def import_demo_data(c, file=None, model=None):
+def import_demo_data(c, file=None, model=None, embedding_dim=1536, ):
     """Import demo data into PostgreSQL database"""
     if not file:
         print('No files provided. Exiting.')
