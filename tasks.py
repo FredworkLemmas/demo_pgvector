@@ -1,6 +1,7 @@
 from invocate import task
 
-from lib.database import PgvectorDatabaseConnection
+from lib.database import PgvectorDatabaseConnectionProvider
+from lib.ingestor import PgvectorIngestor
 from lib.settings import DemoSettingsProvider
 
 
@@ -30,7 +31,12 @@ def import_demo_data(c, file=None, model=None):
         print('No files provided. Exiting.')
         return
     settings_provider = DemoSettingsProvider()
-    connection = PgvectorDatabaseConnection.from_settings_provider(
-        settings_provider)
+    connection_provider = \
+        PgvectorDatabaseConnectionProvider.from_settings_provider(
+            settings_provider)
+    ingestor = PgvectorIngestor(
+        postgresql_connection_provider=connection_provider,
+        model_id=
+    )
     print(f'files: {file}')
     print(f'model: {model}')

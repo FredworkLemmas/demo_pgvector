@@ -5,7 +5,7 @@ from .interfaces import PostgresqlConnectionProvider
 
 
 @attrs.define
-class PgvectorDatabaseConnection(PostgresqlConnectionProvider):
+class PgvectorDatabaseConnectionProvider(PostgresqlConnectionProvider):
     host: str
     port: int
     database: str
