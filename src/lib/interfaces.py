@@ -21,8 +21,7 @@ class TextGenerator(ABC):
 class EmbeddingIngestor(ABC):
 
     @abstractmethod
-    @property
-    def model_id(self) -> int:
+    def get_model_id(self) -> int:
         pass
 
     @abstractmethod

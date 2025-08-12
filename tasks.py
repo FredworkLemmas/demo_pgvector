@@ -36,7 +36,8 @@ def import_demo_data(c, file=None, model=None):
             settings_provider)
     ingestor = PgvectorIngestor(
         postgresql_connection_provider=connection_provider,
-        model_id=
+        model_name="deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+        embedding_dim=1536
     )
     print(f'files: {file}')
     print(f'model: {model}')

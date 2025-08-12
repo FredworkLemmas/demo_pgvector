@@ -7,8 +7,11 @@ from .interfaces import EmbeddingIngestor, PostgresqlConnectionProvider
 @attrs.define
 class PgvectorIngestor(EmbeddingIngestor):
     postgresql_connection_provider: PostgresqlConnectionProvider
-    model_id: int
+    model_name: str
     embedding_dim: int
+
+    def get_model_id(self) -> int:
+        return self.create_or_lookup_model_id(self.model_name)
 
     def ingest(
         self,
@@ -24,11 +27,15 @@ class PgvectorIngestor(EmbeddingIngestor):
 
         # transform json to string
         metadata_json = json.dumps(metadata) if metadata else None
+
+        # insert new model
         cursor.execute(
             """
-            INSERT INTO text_embeddings (text, embedding, model_id, metadata)
+            INSERT INTO %s (text, embedding, model_id, metadata)
             VALUES (%s, %s, %s, %s)
-            """, (text, embedding, self.model_id, metadata_json))
+            """, (
+                self.embeddings_tablename(), text, embedding,
+                self.get_model_id(), metadata_json))
 
         conn.commit()
         cursor.close()
@@ -38,7 +45,11 @@ class PgvectorIngestor(EmbeddingIngestor):
         self,
         data: list[tuple[int, list[float], str, dict]]
     ) -> None:
-        pass
+        raise NotImplementedError("Bulk ingestion is not supported yet.")
+
+    def embeddings_tablename(self, model_id: int | None = None) -> str:
+        model_id = model_id or self.get_model_id()
+        return f'text_embeddings_{model_id}'
 
     def create_or_lookup_model_id(self, model_name: str) -> int:
         # get connection
@@ -63,6 +74,20 @@ class PgvectorIngestor(EmbeddingIngestor):
                     (model_name, self.embedding_dim)
                 )
                 model_id = cursor.fetchone()[0]
+
+                # create new table for the vectors
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS %s (
+                        id SERIAL PRIMARY KEY,
+                        text TEXT NOT NULL,
+                        embedding VECTOR(%s),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        metadata JSONB
+                    );
+                    """,
+                    (self.embeddings_tablename(model_id), self.embedding_dim)
+                )
                 conn.commit()
                 return model_id
 
