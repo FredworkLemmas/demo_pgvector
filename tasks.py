@@ -15,6 +15,11 @@ def stop_docker_compose_env(c):
     c.run('docker compose down --remove-orphans')
 
 
+@task(namespace='env', name='build')
+def build_runner_container(c):
+    c.run('docker compose build runner')
+
+
 @task(
     namespace='demo',
     name='import',
