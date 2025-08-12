@@ -1,7 +1,7 @@
 import attrs
 import psycopg2
 
-from .interfaces import PostgresqlConnectionProvider
+from .interfaces import PostgresqlConnectionProvider, SettingsProvider
 
 
 @attrs.define
@@ -23,7 +23,8 @@ class PgvectorDatabaseConnectionProvider(PostgresqlConnectionProvider):
         return connection
 
     @classmethod
-    def from_settings_provider(cls, settings: dict):
+    def from_settings_provider(cls, settings_provider: SettingsProvider):
+        settings = settings_provider.get_settings()
         return cls(
             host=settings['database']['host'],
             port=settings['database']['port'],
