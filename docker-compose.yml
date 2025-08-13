@@ -36,10 +36,14 @@ services:
   runner:
     build: .
     container_name: runner
+    environment:
+      - PYTHONPATH=/app/src
+      - SETTINGS_YAML=/app/settings/demo.yml
     profiles:
       - manual
     volumes:
       - ./:/app
+      - /tmp/demo_pgvector/files:/files
 
 volumes:
   postgres_data:

@@ -1,8 +1,9 @@
+import os
 from invocate import task
 
-from lib.database import PgvectorDatabaseConnectionProvider
-from lib.ingestor import PgvectorIngestor
-from lib.settings import DemoSettingsProvider
+# from lib.database import PgvectorDatabaseConnectionProvider
+# from lib.ingestor import PgvectorIngestor
+# from lib.settings import DemoSettingsProvider
 
 
 @task(namespace='env', name='start')
@@ -43,14 +44,31 @@ def import_demo_data(c, file=None, model=None, embedding_dim=1536, ):
     if not file:
         print('No files provided. Exiting.')
         return
-    settings_provider = DemoSettingsProvider()
-    connection_provider = \
-        PgvectorDatabaseConnectionProvider.from_settings_provider(
-            settings_provider)
-    ingestor = PgvectorIngestor(
-        postgresql_connection_provider=connection_provider,
-        model_name="deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
-        embedding_dim=1536
+    # settings_provider = DemoSettingsProvider()
+    # connection_provider = \
+    #     PgvectorDatabaseConnectionProvider.from_settings_provider(
+    #         settings_provider)
+    # ingestor = PgvectorIngestor(
+    #     postgresql_connection_provider=connection_provider,
+    #     model_name="deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+    #     embedding_dim=1536
+    # )
+    # print(f'files: {file}')
+    # print(f'model: {model}')
+    c.run('install -d /tmp/demo_pgvector/files')
+    container_files = []
+    for f in file:
+        c.run(f'cp {f} /tmp/demo_pgvector/files/')
+        container_files.append('/files/{}'.format(os.path.basename(f)))
+
+    model = model or "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    embedding_dim = embedding_dim or 1536
+
+    file_opts = [f'-f {f}' for f in container_files]
+    model_opts = [f'--model {model}'] if model else []
+    dim_opts = [f'--embedding-dim {embedding_dim}'] if embedding_dim else []
+    c.run(
+        'docker compose run runner python3 cli/import_doc.py {}'.format(
+            ' '.join(list(file_opts + model_opts + dim_opts))
+        )
     )
-    print(f'files: {file}')
-    print(f'model: {model}')
