@@ -44,17 +44,6 @@ def import_demo_data(c, file=None, model=None, embedding_dim=1536, ):
     if not file:
         print('No files provided. Exiting.')
         return
-    # settings_provider = DemoSettingsProvider()
-    # connection_provider = \
-    #     PgvectorDatabaseConnectionProvider.from_settings_provider(
-    #         settings_provider)
-    # ingestor = PgvectorIngestor(
-    #     postgresql_connection_provider=connection_provider,
-    #     model_name="deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
-    #     embedding_dim=1536
-    # )
-    # print(f'files: {file}')
-    # print(f'model: {model}')
     c.run('install -d /tmp/demo_pgvector/files')
     container_files = []
     for f in file:
