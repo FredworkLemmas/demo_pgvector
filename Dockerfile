@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     virtualenv \
     pandoc \
+    libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user
@@ -30,6 +31,9 @@ RUN chown -R appuser:appuser /venv
 WORKDIR /app
 RUN chown appuser:appuser /app
 
+RUN mkdir /work
+RUN chown appuser:appuser /work
+
 # Switch to non-root user
 USER appuser
 
@@ -38,6 +42,7 @@ COPY --chown=appuser:appuser requirements.txt .
 
 # Install Python packages using virtualenv pip
 RUN /venv/bin/pip3 install --no-cache-dir -r requirements.txt
+
 
 # Add virtualenv to PATH so commands use the virtualenv by default
 ENV PATH="/venv/bin:$PATH"

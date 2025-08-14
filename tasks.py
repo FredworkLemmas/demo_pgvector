@@ -41,18 +41,22 @@ def build_runner_container(c):
 )
 def import_demo_data(c, file=None, model=None, embedding_dim=1536, ):
     """Import demo data into PostgreSQL database"""
+    # sanity check
     if not file:
         print('No files provided. Exiting.')
         return
+    # make sure the input file directory exists and copy source files to it
     c.run('install -d /tmp/demo_pgvector/files')
     container_files = []
     for f in file:
         c.run(f'cp {f} /tmp/demo_pgvector/files/')
         container_files.append('/files/{}'.format(os.path.basename(f)))
 
+    # define model, embedding dimensions
     model = model or "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
     embedding_dim = embedding_dim or 1536
 
+    # build opts and run in container
     file_opts = [f'-f {f}' for f in container_files]
     model_opts = [f'--model {model}'] if model else []
     dim_opts = [f'--embedding-dim {embedding_dim}'] if embedding_dim else []

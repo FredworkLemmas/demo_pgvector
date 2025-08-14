@@ -68,3 +68,15 @@ class SettingsProvider(ABC):
     @abstractmethod
     def get_settings(self) -> dict:
         pass
+
+
+class SourceConversionTool(ABC):
+
+    @staticmethod
+    @abstractmethod
+    def convertible_types() -> list[str]:
+        pass
+
+    @abstractmethod
+    def convert(self, source: str) -> str:
+        pass

@@ -44,7 +44,9 @@ services:
     volumes:
       - ./:/app
       - /tmp/demo_pgvector/files:/files
+      - tmp_workspace_data:/workspace
 
 volumes:
   postgres_data:
   redis_data:
+  tmp_workspace_data:
