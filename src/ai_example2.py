@@ -1,5 +1,4 @@
 import psycopg2
-import numpy as np
 import logging
 import torch
 from transformers import AutoTokenizer, AutoModel
@@ -12,13 +11,15 @@ logger = logging.getLogger(__name__)
 
 class vLLMEmbeddingGenerator:
     def __init__(
-            self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
+        self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
+    ):
         """Initialize with a sentence transformer model"""
         self.model_name = model_name
         self.tokenizer = None
         self.model = None
         self.device = torch.device(
-            'cuda' if torch.cuda.is_available() else 'cpu')
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
 
     def load_model(self):
         """Load the model and tokenizer"""
@@ -37,11 +38,12 @@ class vLLMEmbeddingGenerator:
     def mean_pooling(self, model_output, attention_mask):
         """Apply mean pooling to get sentence embeddings"""
         token_embeddings = model_output[0]
-        input_mask_expanded = attention_mask.unsqueeze(-1).expand(
-            token_embeddings.size()).float()
+        input_mask_expanded = (
+            attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+        )
         return torch.sum(
-            token_embeddings * input_mask_expanded, 1) / torch.clamp(
-            input_mask_expanded.sum(1), min=1e-9)
+            token_embeddings * input_mask_expanded, 1
+        ) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
     def generate_embeddings(self, texts: list) -> list:
         """Generate embeddings for a list of texts"""
@@ -55,10 +57,7 @@ class vLLMEmbeddingGenerator:
                 for text in texts:
                     # Tokenize text
                     encoded_input = self.tokenizer(
-                        text,
-                        padding=True,
-                        truncation=True,
-                        return_tensors='pt'
+                        text, padding=True, truncation=True, return_tensors="pt"
                     ).to(self.device)
 
                     # Generate embeddings
@@ -66,14 +65,18 @@ class vLLMEmbeddingGenerator:
 
                     # Apply mean pooling
                     sentence_embedding = self.mean_pooling(
-                        model_output, encoded_input['attention_mask'])
+                        model_output, encoded_input["attention_mask"]
+                    )
 
                     # Normalize embedding
                     sentence_embedding = F.normalize(
-                        sentence_embedding, p=2, dim=1)
+                        sentence_embedding, p=2, dim=1
+                    )
 
                     # Convert to list
-                    embedding = sentence_embedding.cpu().numpy().flatten().tolist()
+                    embedding = (
+                        sentence_embedding.cpu().numpy().flatten().tolist()
+                    )
                     embeddings.append(embedding)
 
             return embeddings
@@ -91,7 +94,7 @@ def create_connection():
             database="your_database_name",
             user="your_username",
             password="your_password",
-            port="5432"
+            port="5432",
         )
         return conn
     except Exception as e:
@@ -117,7 +120,8 @@ def setup_pgvector_extension(conn, embedding_dim: int = 384):
                 model_name VARCHAR(255),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-        """)
+        """
+        )
 
         # Create index for faster similarity search
         cursor.execute(
@@ -125,7 +129,8 @@ def setup_pgvector_extension(conn, embedding_dim: int = 384):
             CREATE INDEX IF NOT EXISTS vllm_embeddings_idx
                 ON vllm_text_embeddings USING ivfflat (embedding vector_cosine_ops)
                 WITH (lists = 100);
-                       """)
+                       """
+        )
 
         conn.commit()
         cursor.close()
@@ -145,7 +150,9 @@ def store_embedding(conn, text: str, embedding: list, model_name: str):
             """
             INSERT INTO vllm_text_embeddings (text, embedding, model_name)
             VALUES (%s, %s, %s)
-                       """, (text, embedding, model_name))
+                       """,
+            (text, embedding, model_name),
+        )
 
         conn.commit()
         cursor.close()
@@ -167,7 +174,9 @@ def retrieve_similar_texts(conn, query_embedding: list, limit: int = 5):
             FROM vllm_text_embeddings
             ORDER BY embedding <=> %s
                 LIMIT %s
-                       """, (query_embedding, query_embedding, limit))
+                       """,
+            (query_embedding, query_embedding, limit),
+        )
 
         results = cursor.fetchall()
         cursor.close()
@@ -200,7 +209,8 @@ def main():
 
         # Setup database and pgvector extension
         setup_pgvector_extension(
-            conn, 384)  # all-MiniLM-L6-v2 has 384 dimensions
+            conn, 384
+        )  # all-MiniLM-L6-v2 has 384 dimensions
 
         # Generate embedding for the text
         logger.info(f"Generating embedding for: '{text}'")
@@ -225,10 +235,12 @@ def main():
 
         logger.info("Generating embeddings for additional texts...")
         additional_embeddings = embedding_generator.generate_embeddings(
-            additional_texts)
+            additional_texts
+        )
 
         for add_text, add_embedding in zip(
-                additional_texts, additional_embeddings):
+            additional_texts, additional_embeddings
+        ):
             store_embedding(conn, add_text, add_embedding, model_name)
 
         # Retrieve similar texts
@@ -246,19 +258,20 @@ def main():
             print("-" * 80)
 
         # Display embedding info
-        print(f"\nEmbedding Information:")
+        print("\nEmbedding Information:")
         print(f"Model used: {model_name}")
         print(f"Embedding dimensions: {len(embedding)}")
         print(f"Device used: {embedding_generator.device}")
         print(
-            f"First 10 embedding values: {[f'{x:.4f}' for x in embedding[:10]]}")
+            f"First 10 embedding values: {[f'{x:.4f}' for x in embedding[:10]]}"
+        )
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")
 
     finally:
         # Close database connection
-        if 'conn' in locals() and conn:
+        if "conn" in locals() and conn:
             conn.close()
             logger.info("Database connection closed")
 

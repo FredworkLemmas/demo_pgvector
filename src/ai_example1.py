@@ -1,10 +1,8 @@
 import psycopg2
 import numpy as np
 from vllm import LLM, SamplingParams
-import json
 import logging
-import asyncio
-from typing import List, Optional
+from typing import List
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -53,12 +51,12 @@ class EmbeddingGenerator:
 
                 # Generate response (this is a simplified approach)
                 # In practice, you might need to use the model's specific embedding method
-                outputs = self.llm.generate(
-                    [prompt], sampling_params=SamplingParams(
-                        temperature=0,
-                        max_tokens=1,
-                        stop=None
-                    ))
+                _ = self.llm.generate(
+                    [prompt],
+                    sampling_params=SamplingParams(
+                        temperature=0, max_tokens=1, stop=None
+                    ),
+                )
 
                 # For this example, we'll create a mock embedding
                 # In reality, you'd extract embeddings from the model's hidden states
@@ -81,7 +79,7 @@ class EmbeddingGenerator:
         hash_int = int(hash_obj.hexdigest(), 16)
 
         # Generate pseudo-random embedding
-        np.random.seed(hash_int % (2 ** 32))
+        np.random.seed(hash_int % (2**32))
         embedding = np.random.normal(0, 1, self.embedding_dim).tolist()
 
         # Normalize the embedding
@@ -99,7 +97,7 @@ def create_connection():
             database="your_database_name",
             user="your_username",
             password="your_password",
-            port="5432"
+            port="5432",
         )
         return conn
     except Exception as e:
@@ -125,7 +123,8 @@ def setup_pgvector_extension(conn, embedding_dim: int = 384):
                 model_name VARCHAR(255),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-        """)
+        """
+        )
 
         # Create index for faster similarity search
         cursor.execute(
@@ -133,7 +132,8 @@ def setup_pgvector_extension(conn, embedding_dim: int = 384):
             CREATE INDEX IF NOT EXISTS text_embeddings_embedding_idx
                 ON text_embeddings USING ivfflat (embedding vector_cosine_ops)
                 WITH (lists = 100);
-                       """)
+                       """
+        )
 
         conn.commit()
         cursor.close()
@@ -154,7 +154,9 @@ def store_embedding(conn, text: str, embedding: List[float], model_name: str):
             """
             INSERT INTO text_embeddings (text, embedding, model_name)
             VALUES (%s, %s, %s)
-                       """, (text, embedding, model_name))
+                       """,
+            (text, embedding, model_name),
+        )
 
         conn.commit()
         cursor.close()
@@ -177,7 +179,9 @@ def retrieve_similar_texts(conn, query_embedding: List[float], limit: int = 5):
             FROM text_embeddings
             ORDER BY embedding <=> %s
                 LIMIT %s
-                       """, (query_embedding, query_embedding, limit))
+                       """,
+            (query_embedding, query_embedding, limit),
+        )
 
         results = cursor.fetchall()
         cursor.close()
@@ -228,15 +232,17 @@ def main():
         additional_texts = [
             "a fast brown fox leaps over a sleepy dog",
             "the weather is nice today",
-            "machine learning is fascinating"
+            "machine learning is fascinating",
         ]
 
         logger.info("Generating embeddings for additional texts...")
         additional_embeddings = embedding_generator.generate_embeddings(
-            additional_texts)
+            additional_texts
+        )
 
         for i, (add_text, add_embedding) in enumerate(
-                zip(additional_texts, additional_embeddings)):
+            zip(additional_texts, additional_embeddings)
+        ):
             store_embedding(conn, add_text, add_embedding, model_name)
 
         # Retrieve similar texts
@@ -251,7 +257,7 @@ def main():
             print("-" * 80)
 
         # Display embedding info
-        print(f"\nEmbedding generated successfully!")
+        print("\nEmbedding generated successfully!")
         print(f"Model used: {model_name}")
         print(f"Embedding dimensions: {len(embedding)}")
         print(f"First 10 values: {[f'{x:.4f}' for x in embedding[:10]]}")
@@ -261,7 +267,7 @@ def main():
 
     finally:
         # Close database connection
-        if 'conn' in locals() and conn:
+        if "conn" in locals() and conn:
             conn.close()
             logger.info("Database connection closed")
 

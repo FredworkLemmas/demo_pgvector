@@ -1,11 +1,10 @@
 import psycopg2
 import numpy as np
 import logging
-import torch
 from vllm import LLM, SamplingParams
 from transformers import AutoTokenizer
 import json
-from typing import List, Optional
+from typing import List
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -14,13 +13,15 @@ logger = logging.getLogger(__name__)
 
 class DeepSeekEmbeddingGenerator:
     def __init__(
-            self,
-            model_name: str = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"):
+        self, model_name: str = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    ):
         """Initialize vLLM with DeepSeek model for embedding generation"""
         self.model_name = model_name
         self.llm = None
         self.tokenizer = None
-        self.embedding_dim = 1536  # Typical for 1.5B models, may need adjustment
+        self.embedding_dim = (
+            1536  # Typical for 1.5B models, may need adjustment
+        )
 
     def load_model(self):
         """Load the vLLM model and tokenizer"""
@@ -29,7 +30,8 @@ class DeepSeekEmbeddingGenerator:
 
             # Load tokenizer
             self.tokenizer = AutoTokenizer.from_pretrained(
-                self.model_name, trust_remote_code=True)
+                self.model_name, trust_remote_code=True
+            )
 
             # Configure vLLM for the DeepSeek model
             self.llm = LLM(
@@ -48,8 +50,9 @@ class DeepSeekEmbeddingGenerator:
             logger.error(f"Error loading model: {e}")
             raise
 
-    def generate_embeddings_from_hidden_states(self, texts: List[str]) -> List[
-        List[float]]:
+    def generate_embeddings_from_hidden_states(
+        self, texts: List[str]
+    ) -> List[List[float]]:
         """Generate embeddings by extracting hidden states from the model"""
         if not self.llm:
             raise ValueError("Model not loaded. Call load_model() first.")
@@ -75,8 +78,9 @@ class DeepSeekEmbeddingGenerator:
                 # For now, we'll create embeddings based on the text and response
                 # In a full implementation, you'd extract actual hidden states
                 embedding = self._extract_semantic_embedding(
-                    text, outputs[0].outputs[0].text if outputs[
-                        0].outputs else "")
+                    text,
+                    outputs[0].outputs[0].text if outputs[0].outputs else "",
+                )
                 embeddings.append(embedding)
 
             return embeddings
@@ -86,7 +90,8 @@ class DeepSeekEmbeddingGenerator:
             return []
 
     def _extract_semantic_embedding(
-            self, original_text: str, model_response: str) -> List[float]:
+        self, original_text: str, model_response: str
+    ) -> List[float]:
         """Create semantic embedding from text and model response"""
         # Combine original text and model's interpretation
         combined_text = f"{original_text} {model_response}"
@@ -104,14 +109,14 @@ class DeepSeekEmbeddingGenerator:
 
         # Normalize text
         text_lower = text.lower().strip()
-        words = re.findall(r'\b\w+\b', text_lower)
+        words = re.findall(r"\b\w+\b", text_lower)
 
         # Create base hash for consistency
         text_hash = hashlib.sha256(text.encode()).hexdigest()
         base_seed = int(text_hash[:8], 16)
 
         # Initialize random generator with base seed
-        np.random.seed(base_seed % (2 ** 32))
+        np.random.seed(base_seed % (2**32))
         base_embedding = np.random.normal(0, 1, self.embedding_dim)
 
         # Add semantic features based on word analysis
@@ -124,20 +129,23 @@ class DeepSeekEmbeddingGenerator:
             word_weight = word_counts[word] / total_words
 
             # Create word-specific modification
-            np.random.seed(word_hash % (2 ** 32))
+            np.random.seed(word_hash % (2**32))
             word_vector = np.random.normal(0, word_weight, self.embedding_dim)
             base_embedding += word_vector * 0.1
 
         # Add length and complexity features
         length_factor = min(
-            len(text) / 100.0, 1.0)  # Normalize by typical text length
+            len(text) / 100.0, 1.0
+        )  # Normalize by typical text length
         complexity_factor = len(set(words)) / max(
-            len(words), 1)  # Vocabulary diversity
+            len(words), 1
+        )  # Vocabulary diversity
 
         # Adjust embedding based on text characteristics
-        base_embedding *= (1.0 + length_factor * 0.1)
+        base_embedding *= 1.0 + length_factor * 0.1
         base_embedding += np.random.normal(
-            0, complexity_factor * 0.05, self.embedding_dim)
+            0, complexity_factor * 0.05, self.embedding_dim
+        )
 
         # Normalize the final embedding
         norm = np.linalg.norm(base_embedding)
@@ -159,7 +167,7 @@ def create_connection():
             database="your_database_name",
             user="your_username",
             password="your_password",
-            port="5432"
+            port="5432",
         )
         return conn
     except Exception as e:
@@ -186,7 +194,8 @@ def setup_pgvector_extension(conn, embedding_dim: int = 1536):
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 metadata JSONB
             );
-        """)
+        """
+        )
 
         # Create index for faster similarity search
         cursor.execute(
@@ -194,7 +203,8 @@ def setup_pgvector_extension(conn, embedding_dim: int = 1536):
             CREATE INDEX IF NOT EXISTS deepseek_embeddings_idx
                 ON deepseek_embeddings USING ivfflat (embedding vector_cosine_ops)
                 WITH (lists = 100);
-                       """)
+                       """
+        )
 
         conn.commit()
         cursor.close()
@@ -206,8 +216,12 @@ def setup_pgvector_extension(conn, embedding_dim: int = 1536):
 
 
 def store_embedding(
-        conn, text: str, embedding: List[float], model_name: str,
-        metadata: dict = None):
+    conn,
+    text: str,
+    embedding: List[float],
+    model_name: str,
+    metadata: dict = None,
+):
     """Store text and its embedding in PostgreSQL"""
     try:
         cursor = conn.cursor()
@@ -218,12 +232,15 @@ def store_embedding(
             """
             INSERT INTO deepseek_embeddings (text, embedding, model_name, metadata)
             VALUES (%s, %s, %s, %s)
-                       """, (text, embedding, model_name, metadata_json))
+                       """,
+            (text, embedding, model_name, metadata_json),
+        )
 
         conn.commit()
         cursor.close()
         logger.info(
-            f"Successfully stored DeepSeek embedding for: '{text[:50]}...'")
+            f"Successfully stored DeepSeek embedding for: '{text[:50]}...'"
+        )
 
     except Exception as e:
         logger.error(f"Error storing embedding: {e}")
@@ -242,7 +259,9 @@ def retrieve_similar_texts(conn, query_embedding: List[float], limit: int = 5):
             FROM deepseek_embeddings
             ORDER BY embedding <=> %s
                 LIMIT %s
-                       """, (query_embedding, query_embedding, limit))
+                       """,
+            (query_embedding, query_embedding, limit),
+        )
 
         results = cursor.fetchall()
         cursor.close()
@@ -266,9 +285,11 @@ def analyze_embedding_quality(embeddings: List[List[float]], texts: List[str]):
     print(f"Number of embeddings: {len(embeddings)}")
     print(f"Embedding dimension: {len(embeddings[0])}")
     print(
-        f"Mean embedding norm: {np.mean(np.linalg.norm(embeddings_np, axis=1)):.4f}")
+        f"Mean embedding norm: {np.mean(np.linalg.norm(embeddings_np, axis=1)):.4f}"
+    )
     print(
-        f"Std embedding norm: {np.std(np.linalg.norm(embeddings_np, axis=1)):.4f}")
+        f"Std embedding norm: {np.std(np.linalg.norm(embeddings_np, axis=1)):.4f}"
+    )
 
     # Compute pairwise similarities
     if len(embeddings) > 1:
@@ -318,7 +339,7 @@ def main():
         metadata = {
             "text_length": len(text),
             "word_count": len(text.split()),
-            "embedding_method": "deepseek_contextual"
+            "embedding_method": "deepseek_contextual",
         }
         store_embedding(conn, text, main_embedding, model_name, metadata)
 
@@ -334,18 +355,21 @@ def main():
 
         logger.info("Generating embeddings for additional texts...")
         additional_embeddings = embedding_generator.generate_embeddings(
-            additional_texts)
+            additional_texts
+        )
 
         # Store additional embeddings
         for add_text, add_embedding in zip(
-                additional_texts, additional_embeddings):
+            additional_texts, additional_embeddings
+        ):
             add_metadata = {
                 "text_length": len(add_text),
                 "word_count": len(add_text.split()),
-                "embedding_method": "deepseek_contextual"
+                "embedding_method": "deepseek_contextual",
             }
             store_embedding(
-                conn, add_text, add_embedding, model_name, add_metadata)
+                conn, add_text, add_embedding, model_name, add_metadata
+            )
 
         # Analyze embedding quality
         all_embeddings = [main_embedding] + additional_embeddings
@@ -358,11 +382,17 @@ def main():
 
         print(f"\nQuery text: '{text}'")
         print(
-            "\nMost similar texts (using DeepSeek-R1-Distill-Qwen-1.5B embeddings):")
+            "\nMost similar texts (using DeepSeek-R1-Distill-Qwen-1.5B embeddings):"
+        )
         print("=" * 90)
 
-        for i, (text_result, distance, model, metadata_json,
-                created_at) in enumerate(similar_texts, 1):
+        for i, (
+            text_result,
+            distance,
+            model,
+            metadata_json,
+            created_at,
+        ) in enumerate(similar_texts, 1):
             similarity = 1 - distance
             metadata = json.loads(metadata_json) if metadata_json else {}
 
@@ -373,7 +403,7 @@ def main():
             print("-" * 90)
 
         # Display embedding information
-        print(f"\nDeepSeek Embedding Information:")
+        print("\nDeepSeek Embedding Information:")
         print("=" * 50)
         print(f"Model: {model_name}")
         print(f"Embedding dimensions: {len(main_embedding)}")
@@ -384,11 +414,12 @@ def main():
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         import traceback
+
         traceback.print_exc()
 
     finally:
         # Close database connection
-        if 'conn' in locals() and conn:
+        if "conn" in locals() and conn:
             conn.close()
             logger.info("Database connection closed")
 

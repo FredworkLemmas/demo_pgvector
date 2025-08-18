@@ -18,7 +18,7 @@ class PgvectorDatabaseConnectionProvider(PostgresqlConnectionProvider):
             port=self.port,
             database=self.database,
             user=self.user,
-            password=self.password
+            password=self.password,
         )
         return connection
 
@@ -26,9 +26,9 @@ class PgvectorDatabaseConnectionProvider(PostgresqlConnectionProvider):
     def from_settings_provider(cls, settings_provider: SettingsProvider):
         settings = settings_provider.get_settings()
         return cls(
-            host=settings['database']['host'],
-            port=settings['database']['port'],
-            database=settings['database']['database'],
-            user=settings['database']['user'],
-            password=settings['database']['password']
+            host=settings["database"]["host"],
+            port=settings["database"]["port"],
+            database=settings["database"]["database"],
+            user=settings["database"]["user"],
+            password=settings["database"]["password"],
         )

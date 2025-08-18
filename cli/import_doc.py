@@ -4,15 +4,13 @@
 import sys
 import click
 
-from lib.database import PgvectorDatabaseConnectionProvider
-from lib.ingestor import PgvectorIngestor
-from lib.settings import DemoSettingsProvider
+from lib.documents import SourceDocument
 from lib.sources import SourceConverter
 
 
 DEFAULT_MODEL = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
 DEFAULT_EMBEDDING_DIM = 1536
-INTERNAL_WORKDIR = '/work'
+INTERNAL_WORKDIR = "/work"
 
 
 @click.command(help="Import demo data into PostgreSQL database")
@@ -45,36 +43,32 @@ def main(files: tuple[str, ...], model: str, embedding_dim: int) -> None:
         sys.exit(0)
 
     # Initialize settings and database/ingestor components
-    settings_provider = DemoSettingsProvider()
-    connection_provider = PgvectorDatabaseConnectionProvider.from_settings_provider(
-        settings_provider
-    )
-    ingestor = PgvectorIngestor(
-        postgresql_connection_provider=connection_provider,
-        model_name=model,
-        embedding_dim=embedding_dim,
-    )
+    # settings_provider = DemoSettingsProvider()
+    # connection_provider = (
+    #     PgvectorDatabaseConnectionProvider.from_settings_provider(
+    #         settings_provider
+    #     )
+    # )
+    # ingestor = PgvectorIngestor(
+    #     postgresql_connection_provider=connection_provider,
+    #     model_name=model,
+    #     embedding_dim=embedding_dim,
+    # )
 
-    # Output selected parameters (as in the original task)
-    click.echo(f"files: {list(files)}")
-    click.echo(f"model: {model}")
+    converter = SourceConverter(sources=list(files))
 
-    converter = SourceConverter()
-    for file in files:
-        is_convertible = converter.is_convertible(file)
-        print(f"file: {file}, convertible: {is_convertible}")
-        if is_convertible:
-            print(f"Converting file: {file}")
-            converted_file = converter.convert(file)
-            print(f'Converted file: {file} to {converted_file}')
+    print(f"Converting files: {list(files)}")
+    print(f"Ingestion ready files: {converter.ingestion_ready_sources()}")
 
-
-    # If ingestion should actually occur and PgvectorIngestor exposes an API like
-    # ingest_file(...) or ingest_files(...), you can uncomment and adapt this:
-    #
-    # for path in files:
-    #     ingestor.ingest_file(path)
-    # click.echo("Import completed.")
+    for file in converter.ingestion_ready_sources():
+        document = SourceDocument(
+            source_filepath=file, max_chunk_tokens=DEFAULT_EMBEDDING_DIM
+        )
+        for i, chunk in enumerate(document._chunk_iterator()):
+            click.echo(f"Chunk {i}: \n{chunk.text}")
+            # click.echo(f'chunk dict: {chunk.__dict__}')
+            if i > 4:
+                break
 
 
 if __name__ == "__main__":
