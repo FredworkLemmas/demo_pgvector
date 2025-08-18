@@ -392,8 +392,8 @@ if __name__ == '__main__':
             ' perspective.'
         ),
         (
-            'Summarize for a legal/compliance audience, highlighting obligations '
-            'and constraints.'
+            'Summarize for a legal/compliance audience, highlighting  '
+            'obligations and constraints.'
         ),
         'Summarize the key open questions and uncertainties.',
     ]
