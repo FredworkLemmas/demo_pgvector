@@ -42,7 +42,7 @@ class EmbeddingQueryProvider(ABC):
         self,
         embedding: list[float],
         limit: int = 5,
-        fields: Iterator[str] = ("embedding", "text", "metadata"),
+        fields: Iterator[str] = ('embedding', 'text', 'metadata'),
     ) -> Iterator[tuple]:
         pass
 

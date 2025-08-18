@@ -8,7 +8,7 @@ import pypandoc
 
 from lib.interfaces import SourceConversionTool
 
-INTERNAL_WORKDIR = "/work"
+INTERNAL_WORKDIR = '/work'
 
 
 @attrs.define
@@ -29,7 +29,7 @@ class BaseSourceConversionTool(object):
         return []
 
     def convert(self, source: str) -> str:
-        raise NotImplementedError("convert method not implemented")
+        raise NotImplementedError('convert method not implemented')
 
     @classmethod
     def converted_path(self, source: str) -> str:
@@ -37,11 +37,11 @@ class BaseSourceConversionTool(object):
         filename = os.path.basename(source)
         filename_without_suffix = (
             filename
-            if "." not in filename
-            else ".".join(filename.split(".")[0:-1])
+            if '.' not in filename
+            else '.'.join(filename.split('.')[0:-1])
         )
         filename_with_new_suffix = (
-            f"{filename_without_suffix}.{self.converted_suffix}"
+            f'{filename_without_suffix}.{self.converted_suffix}'
         )
         if not os.path.exists(
             os.path.join(INTERNAL_WORKDIR, filename_with_new_suffix)
@@ -51,22 +51,22 @@ class BaseSourceConversionTool(object):
         while True:
             counter += 1
             filename = (
-                f"{filename_without_suffix}_{counter}.{self.converted_suffix}"
+                f'{filename_without_suffix}_{counter}.{self.converted_suffix}'
             )
             if not os.path.exists(os.path.join(INTERNAL_WORKDIR, filename)):
                 return os.path.join(INTERNAL_WORKDIR, filename)
 
 
 class EPUBSourceConversionTool(BaseSourceConversionTool):
-    converted_suffix = "md"
+    converted_suffix = 'md'
 
     @staticmethod
     def convertible_types() -> list[str]:
-        return ["application/epub+zip"]
+        return ['application/epub+zip']
 
     def convert(self, source: str) -> str:
         output_path = self.converted_path(source)
-        print(f"output_path: {output_path}")
+        print(f'output_path: {output_path}')
         return self.convert_epub_advanced(source, output_path)
 
     def convert_epub_to_markdown_pypandoc(
@@ -99,8 +99,8 @@ class EPUBSourceConversionTool(BaseSourceConversionTool):
             pypandoc.get_pandoc_version()
         except OSError as e:
             raise RuntimeError(
-                f"Pandoc not found. Install with: pip install pypandoc-binary\n"
-                f"Or install pandoc system-wide. Error: {e}"
+                f'Pandoc not found. Install with: pip install pypandoc-binary\n'
+                f'Or install pandoc system-wide. Error: {e}'
             )
 
         epub_path = Path(epub_path)
@@ -108,22 +108,22 @@ class EPUBSourceConversionTool(BaseSourceConversionTool):
 
         # Check if input file exists
         if not epub_path.exists():
-            raise FileNotFoundError(f"EPUB file not found: {epub_path}")
+            raise FileNotFoundError(f'EPUB file not found: {epub_path}')
 
         # Create output directory if it doesn't exist
         output_md_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Build extra arguments list
         pandoc_args = [
-            "--wrap=none",  # Don't wrap lines
+            '--wrap=none',  # Don't wrap lines
             # '--atx-headers',  # Use ATX-style headers (# ## ###)
-            "--standalone",  # Create standalone document
+            '--standalone',  # Create standalone document
         ]
 
         # Handle media extraction
         if extract_media:
-            media_dir = output_md_path.parent / (output_md_path.stem + "_media")
-            pandoc_args.append(f"--extract-media={media_dir}")
+            media_dir = output_md_path.parent / (output_md_path.stem + '_media')
+            pandoc_args.append(f'--extract-media={media_dir}')
 
         # Add custom arguments if provided
         if extra_args:
@@ -133,8 +133,8 @@ class EPUBSourceConversionTool(BaseSourceConversionTool):
             # Convert EPUB to Markdown
             _ = pypandoc.convert_file(
                 str(epub_path),
-                "markdown",
-                format="epub",
+                'markdown',
+                format='epub',
                 outputfile=str(output_md_path),
                 extra_args=pandoc_args,
             )
@@ -142,7 +142,7 @@ class EPUBSourceConversionTool(BaseSourceConversionTool):
             return str(output_md_path)
 
         except Exception as e:
-            raise OSError(f"Conversion failed: {e}")
+            raise OSError(f'Conversion failed: {e}')
 
     def convert_epub_advanced(self, epub_path: str, output_md_path: str) -> str:
         """
@@ -150,13 +150,13 @@ class EPUBSourceConversionTool(BaseSourceConversionTool):
         """
 
         advanced_args = [
-            "--markdown-headings=atx",  # Use # style headers
-            "--wrap=preserve",  # Preserve original line wrapping
-            "--tab-stop=2",  # Set tab stops to 2 spaces
-            "--eol=lf",  # Use LF line endings
-            "--strip-comments",  # Remove HTML comments
-            "--reference-links",  # Use reference-style links
-            "--columns=80",  # Set line width for wrapping
+            '--markdown-headings=atx',  # Use # style headers
+            '--wrap=preserve',  # Preserve original line wrapping
+            '--tab-stop=2',  # Set tab stops to 2 spaces
+            '--eol=lf',  # Use LF line endings
+            '--strip-comments',  # Remove HTML comments
+            '--reference-links',  # Use reference-style links
+            '--columns=80',  # Set line width for wrapping
         ]
 
         return self.convert_epub_to_markdown_pypandoc(
@@ -185,7 +185,7 @@ class SourceConverter:
     def needs_conversion(self, source: str) -> bool:
         identifier = SourceIdentifier(source).identifier()
         # print(f'file type identifier: {identifier}')
-        return identifier not in ["text/plain"]
+        return identifier not in ['text/plain']
 
     def is_convertible(self, source: str) -> bool:
         identifier = SourceIdentifier(source).identifier()

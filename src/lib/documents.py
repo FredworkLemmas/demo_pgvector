@@ -24,7 +24,7 @@ class SourceDocument(object):
         self.metadata = self.metadata or {}
         self.max_chunk_tokens = self.max_chunk_tokens or MAX_CHUNK_TOKENS
         self.model_name = (
-            self.model_name or "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+            self.model_name or 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
         )
 
     def enriched_chunks(self):
@@ -34,17 +34,17 @@ class SourceDocument(object):
                 source_document=self,
                 metadata={
                     **chunk.metadata,
-                    "source_filepath": self.source_filepath,
-                    "chunk_tokenizer_model": self.model_name,
-                    "chunk_size": self.max_chunk_tokens,
-                    "chunk_number": n,
+                    'source_filepath': self.source_filepath,
+                    'chunk_tokenizer_model': self.model_name,
+                    'chunk_size': self.max_chunk_tokens,
+                    'chunk_number': n,
                 },
             )
 
     def _as_docling_document(self):
         # Validate that the file exists
         if not Path(self.source_filepath).exists():
-            raise FileNotFoundError(f"File not found: {self.source_filepath}")
+            raise FileNotFoundError(f'File not found: {self.source_filepath}')
         return (
             DocumentConverter()
             .convert(source=Path(self.source_filepath))
