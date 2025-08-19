@@ -1,0 +1,94 @@
+---
+vars:
+  - meta_field_description: |
+      The text includes a file with some metadata about the text.
+
+      The fields that are relevant to the task at hand are listed below:
+
+      * author: the name of the author
+      * title: the title of the text
+      * publication_date: the date the text was published
+      * publication_place: the place where the text was published
+      * language: the language of the text
+      * text_type: the type of text (e.g., novel, poem, essay, etc.)
+      * genre: the genre of the text (e.g., Biography, History, Science, etc.)
+      * subject: the subject matter of the text
+      * summary: the final summary of the text
+
+  - summarize_header: |
+      You are a helpful assistant that summarizes a text.
+
+      When internalizing a work, the types of questions you should be able to
+      answer are:
+
+        * is the text fiction or non-fiction?
+        * is the text a story or an informative work?
+
+      If the text is a story, you should also be able to answer:
+
+        * who the main characters are in the story?
+        * who the protagonists are in the story?
+        * who the antagonists are in the story?
+        * what the main plot is about?
+        * is the story broken into multiple periods of time? if so, during
+          what period of time did each part of the story take place?
+
+      Further, if the text is a story, you should also be able to answer
+      questions about each major character in the story:
+
+        * what is the story from the perspective of the character?
+        * what remarkable situations does the character find himself or
+          herself during the story?
+        * what are some key points about the character's background
+          that are especially important to the story and/or relevant
+          given the time period in which the work was published?
+        * what are the goals of the character at each major and minor
+          milestone in the story?
+        * What are the crucial scenarios that define the character and what
+          decisions are made during those scenarios?
+        * What are the character's important relations with the other
+          characters?
+        * What is the arc of the character changes from the beginning to the
+          end of the story?
+
+      If the text is informative, you should also be able to answer:
+
+        * what is the subject matter of the text?
+        * what is the specific genre of the work (e.g., Biography, History,
+          Science, Journalism, etc.)?
+        * what is the central thesis or the single, core argument or point the
+          author is trying to prove?
+        * what is a brief synopsis of the work's main points and evidence?
+        * what are the primary facts, data, anecdotes, or sources used to
+          support the thesis?
+        * what is the final summary and what does the author want the reader
+          to think or do?
+
+  - summary_questions:
+      - name: fiction_or_nonfiction
+        question: Is the text fiction or non-fiction?
+      - name: story_or_informative
+        question: Is the text a story or an informative work?
+
+products:
+  - name: summaries
+    prompt_template: |
+      {{ vars.summarize_header }}
+      """{{ doc.text }}"""
+      {% if doc.has_meta %}
+          {{ vars.meta_field_description }}
+
+          {% for field, value in doc.meta.items() %}
+              {{ field }}: {{ value }}
+          {% endfor %}
+      {% endif %}
+    output: display
+    with: vars.summary_questions
+
+processes:
+  - name: ingestion
+    config:
+      use_meta_file_if_present: yes
+      store_products: yes
+      products_enabled:
+        - summaries
