@@ -50,12 +50,17 @@ def import_demo_data(
     if not file:
         print('No files provided. Exiting.')
         return
+
     # make sure the input file directory exists and copy source files to it
     c.run('install -d /tmp/demo_pgvector/files')
     container_files = []
     for f in file:
         c.run(f'cp {f} /tmp/demo_pgvector/files/')
         container_files.append('/files/{}'.format(os.path.basename(f)))
+
+        # copy metadata file if it exists
+        if os.path.exists(f'{f}.meta.yml'):
+            c.run(f'cp {f}.meta.yml /tmp/demo_pgvector/files/')
 
     # define model, embedding dimensions
     model = model or 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
