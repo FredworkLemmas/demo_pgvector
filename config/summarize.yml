@@ -1,19 +1,18 @@
 ---
 vars:
   - meta_field_description: |
-      The text includes a file with some metadata about the text.
+      This text includes a file with some metadata about the text and the
+      fields that are relevant to the task at hand are listed below:
 
-      The fields that are relevant to the task at hand are listed below:
-
-      * author: the name of the author
-      * title: the title of the text
-      * publication_date: the date the text was published
-      * publication_place: the place where the text was published
-      * language: the language of the text
-      * text_type: the type of text (e.g., novel, poem, essay, etc.)
-      * genre: the genre of the text (e.g., Biography, History, Science, etc.)
-      * subject: the subject matter of the text
-      * summary: the final summary of the text
+        * author: the name of the author
+        * title: the title of the text
+        * publication_date: the date the text was published
+        * publication_place: the place where the text was published
+        * language: the language of the text
+        * text_type: the type of text (e.g., novel, poem, essay, etc.)
+        * genre: the genre of the text (e.g., Biography, History, Science, etc.)
+        * subject: the subject matter of the text
+        * summary: the final summary of the text
 
   - summarize_header: |
       You are a helpful assistant that summarizes a text.
@@ -66,17 +65,38 @@ vars:
         * what is the final summary and what does the author want the reader
           to think or do?
 
-  - summary_questions:
+  - high_level_summary_questions:
       - name: fiction_or_nonfiction
         question: Is the text fiction or non-fiction?
       - name: story_or_informative
         question: Is the text a story or an informative work?
 
+  - story_general_questions:
+      - name: main_characters
+        question: Who are the main characters in the story?
+        return:
+          name: main_characters
+          interpreter: simple_interpreter
+          type: list
+          instructions: |
+            write a snippet of python code that sets the value of the variable
+            `main_characters` to a list of the names of the main characters in
+            the story.
+      - name: protagonists
+        question: Who are the protagonists in the story?
+      - name: antagonists
+        question: Who are the antagonists in the story?
+      - name: plot
+        question: What is the main plot of the story?
+      - name: multiple_periods
+        question: Is the story broken into multiple periods of time?
+
 products:
-  - name: summaries
+  - name: high_level_summaries
+    output: display  # could be display, file or ingest
+    with: vars.high_level_summary_questions
     prompt_template: |
       {{ vars.summarize_header }}
-      """{{ doc.text }}"""
       {% if doc.has_meta %}
           {{ vars.meta_field_description }}
 
@@ -84,8 +104,25 @@ products:
               {{ field }}: {{ value }}
           {% endfor %}
       {% endif %}
-    output: display
-    with: vars.summary_questions
+      """{{ doc.text }}"""
+      {{ prompt.text }}
+  - name: story_summaries
+    depends_on: high_level_summaries
+    output: display  # could be display, file or ingest
+    with: vars.high_level_summary_questions
+    prompt_template: |
+      {{ vars.summarize_header }}
+      {% if doc.has_meta %}
+          {{ vars.meta_field_description }}
+
+          {% for field, value in doc.meta.items() %}
+              {{ field }}: {{ value }}
+          {% endfor %}
+      {% endif %}
+      """{{ doc.text }}"""
+      {{ prompt.text }}
+
+
 
 processes:
   - name: ingestion
