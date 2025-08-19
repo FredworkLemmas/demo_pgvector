@@ -65,17 +65,46 @@ vars:
         * what is the final summary and what does the author want the reader
           to think or do?
 
+  - summary_prompt_template: |
+      {{ vars.summarize_header }}
+      {% if doc.has_meta %}
+          {{ vars.meta_field_description }}
+
+          {% for field, value in doc.meta.items() %}
+              {{ field }}: {{ value }}
+          {% endfor %}
+      {% endif %}
+      """{{ doc.text }}"""
+      {{ prompt.text }}
+
   - high_level_summary_questions:
       - name: fiction_or_nonfiction
         question: Is the text fiction or non-fiction?
+        export:
+          interpreter: simple_interpreter
+          type: choice
+          instructions: |
+            write a snippet of python code that sets the value of the variable
+            `fiction_or_nonfiction` to either "fiction" or "nonfiction".
+          choices:
+            - fiction
+            - nonfiction
       - name: story_or_informative
         question: Is the text a story or an informative work?
+        export:
+          interpreter: simple_interpreter
+          type: choice
+          instructions: |
+            write a snippet of python code that sets the value of the variable
+            `story_or_informative` to either "story" or "informative".
+          choices:
+            - story
+            - informative
 
   - story_general_questions:
       - name: main_characters
         question: Who are the main characters in the story?
-        return:
-          name: main_characters
+        export:
           interpreter: simple_interpreter
           type: list
           instructions: |
@@ -91,37 +120,49 @@ vars:
       - name: multiple_periods
         question: Is the story broken into multiple periods of time?
 
+  - story_per_character_questions:
+      - name: character_summary
+        question: What is the story from the perspective of the character?
+      - name: remarkable_situations
+        question: |
+          What remarkable situations does the character find himself or herself
+          during the story?
+      - name: background_key_points
+        question: |
+          What are some key points about the character's background that are
+          especially important to the story and/or relevant given the time
+          period in which the work was published?
+      - name: goals
+        question: |
+          What are the goals of the character at each major and minor
+          milestone in the story?
+      - name: scenarios
+        question: |
+          What are the crucial scenarios that define the character and what
+          decisions are made during those scenarios?
+
+
 products:
   - name: high_level_summaries
     output: display  # could be display, file or ingest
-    with: vars.high_level_summary_questions
-    prompt_template: |
-      {{ vars.summarize_header }}
-      {% if doc.has_meta %}
-          {{ vars.meta_field_description }}
+    with: +vars.high_level_summary_questions
+    prompt_template: +vars.summary_prompt_template
 
-          {% for field, value in doc.meta.items() %}
-              {{ field }}: {{ value }}
-          {% endfor %}
-      {% endif %}
-      """{{ doc.text }}"""
-      {{ prompt.text }}
   - name: story_summaries
     depends_on: high_level_summaries
     output: display  # could be display, file or ingest
-    with: vars.high_level_summary_questions
-    prompt_template: |
-      {{ vars.summarize_header }}
-      {% if doc.has_meta %}
-          {{ vars.meta_field_description }}
+    with: +vars.story_general_questions
+    when: +high_level_summaries.story_or_informative == "story"
+    prompt_template: +vars.summary_prompt_template
 
-          {% for field, value in doc.meta.items() %}
-              {{ field }}: {{ value }}
-          {% endfor %}
-      {% endif %}
-      """{{ doc.text }}"""
-      {{ prompt.text }}
-
+  - name: per_character_summaries
+    depends_on: story_summaries
+    output: display
+    with:
+      - +story_general_questions.main_characters
+      - +vars.story_per_character_questions
+    when: +story_summaries.story_or_informative == "story"
+    prompt_template: +vars.prompt_template
 
 
 processes:
@@ -130,4 +171,6 @@ processes:
       use_meta_file_if_present: yes
       store_products: yes
       products_enabled:
-        - summaries
+        - high_level_summaries
+        - story_summaries
+        - per_character_summaries
