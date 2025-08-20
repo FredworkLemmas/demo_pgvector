@@ -42,7 +42,6 @@ class PgvectorIngestor(EmbeddingIngestor):
 
         conn.commit()
         cursor.close()
-        pass
 
     def bulk_ingest(
         self, data: list[tuple[int, list[float], str, dict]]
@@ -76,19 +75,19 @@ class PgvectorIngestor(EmbeddingIngestor):
                 )
                 model_id = cursor.fetchone()[0]
 
-                # create new table for the vectors
-                cursor.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS %s (
-                        id SERIAL PRIMARY KEY,
-                        text TEXT NOT NULL,
-                        embedding VECTOR(%s),
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        metadata JSONB
-                    );
-                    """,
-                    (self.embeddings_tablename(model_id), self.embedding_dim),
-                )
+                # # create new table for the vectors
+                # cursor.execute(
+                #     """
+                #     CREATE TABLE IF NOT EXISTS %s (
+                #         id SERIAL PRIMARY KEY,
+                #         text TEXT NOT NULL,
+                #         embedding VECTOR(%s),
+                #         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                #         metadata JSONB
+                #     );
+                #     """,
+                #     (self.embeddings_tablename(model_id), self.embedding_dim),
+                # )
                 conn.commit()
                 return model_id
 
