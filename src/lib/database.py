@@ -18,7 +18,7 @@ class PgvectorDatabaseConnectionProvider(PostgresqlConnectionProvider):
             port=self.port,
             database=self.database,
             user=self.user,
-            password=self.password
+            password=self.password,
         )
         return connection
 
@@ -30,5 +30,5 @@ class PgvectorDatabaseConnectionProvider(PostgresqlConnectionProvider):
             port=settings['database']['port'],
             database=settings['database']['database'],
             user=settings['database']['user'],
-            password=settings['database']['password']
+            password=settings['database']['password'],
         )

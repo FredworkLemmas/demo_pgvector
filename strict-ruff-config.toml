@@ -1,0 +1,4 @@
+# must use ruff.toml format
+extend = './pyproject.toml'
+
+line-length = 80

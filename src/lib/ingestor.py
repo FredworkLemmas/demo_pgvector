@@ -14,10 +14,7 @@ class PgvectorIngestor(EmbeddingIngestor):
         return self.create_or_lookup_model_id(self.model_name)
 
     def ingest(
-        self,
-        embedding: list[float],
-        text: str,
-        metadata: dict = None
+        self, embedding: list[float], text: str, metadata: dict = None
     ) -> None:
         # get connection
         conn = self.postgresql_connection_provider.get_connection()
@@ -33,19 +30,24 @@ class PgvectorIngestor(EmbeddingIngestor):
             """
             INSERT INTO %s (text, embedding, model_id, metadata)
             VALUES (%s, %s, %s, %s)
-            """, (
-                self.embeddings_tablename(), text, embedding,
-                self.get_model_id(), metadata_json))
+            """,
+            (
+                self.embeddings_tablename(),
+                text,
+                embedding,
+                self.get_model_id(),
+                metadata_json,
+            ),
+        )
 
         conn.commit()
         cursor.close()
         pass
 
     def bulk_ingest(
-        self,
-        data: list[tuple[int, list[float], str, dict]]
+        self, data: list[tuple[int, list[float], str, dict]]
     ) -> None:
-        raise NotImplementedError("Bulk ingestion is not supported yet.")
+        raise NotImplementedError('Bulk ingestion is not supported yet.')
 
     def embeddings_tablename(self, model_id: int | None = None) -> str:
         model_id = model_id or self.get_model_id()
@@ -59,8 +61,7 @@ class PgvectorIngestor(EmbeddingIngestor):
         try:
             # First, try to find existing model
             cursor.execute(
-                "SELECT id FROM models WHERE name = %s",
-                (model_name,)
+                'SELECT id FROM models WHERE name = %s', (model_name,)
             )
             result = cursor.fetchone()
 
@@ -70,8 +71,8 @@ class PgvectorIngestor(EmbeddingIngestor):
             else:
                 # Model doesn't exist, create it
                 cursor.execute(
-                    "INSERT INTO models (name, embedding_dim) VALUES (%s, %s) RETURNING id",
-                    (model_name, self.embedding_dim)
+                    'INSERT INTO models (name, embedding_dim) VALUES (%s, %s) RETURNING id',
+                    (model_name, self.embedding_dim),
                 )
                 model_id = cursor.fetchone()[0]
 
@@ -86,7 +87,7 @@ class PgvectorIngestor(EmbeddingIngestor):
                         metadata JSONB
                     );
                     """,
-                    (self.embeddings_tablename(model_id), self.embedding_dim)
+                    (self.embeddings_tablename(model_id), self.embedding_dim),
                 )
                 conn.commit()
                 return model_id
@@ -96,6 +97,6 @@ class PgvectorIngestor(EmbeddingIngestor):
 
     @classmethod
     def from_postgresql_connection_provider(
-            cls, connection_provider: PostgresqlConnectionProvider) \
-            -> 'PgvectorIngestor' :
+        cls, connection_provider: PostgresqlConnectionProvider
+    ) -> 'PgvectorIngestor':
         return cls(postgresql_connection_provider=connection_provider)

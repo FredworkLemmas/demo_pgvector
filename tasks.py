@@ -1,12 +1,14 @@
 import os
 from invocate import task
 
-# from lib.database import PgvectorDatabaseConnectionProvider
-# from lib.ingestor import PgvectorIngestor
-# from lib.settings import DemoSettingsProvider
+
+@task(namespace='env', name='init')
+def init_environment(c):
+    # make sure input file directory exists
+    c.run('install -d /tmp/demo_pgvector/files')
 
 
-@task(namespace='env', name='start')
+@task(namespace='env', name='start', pre=[init_environment])
 def start_docker_compose_env(c):
     c.run('docker compose up -d --remove-orphans')
 
@@ -25,10 +27,11 @@ def build_runner_container(c):
     namespace='demo',
     name='import',
     iterable=['file'],
+    pre=[init_environment],
     help={
         'file': (
             'Files to import (may be used multiple times, e.g., '
-            '--file file1.csv --file file2.csv)'
+            '--file file1.pdf --file file2.epub)'
         ),
         'model': (
             'Model to use for importing (default: '
@@ -36,23 +39,37 @@ def build_runner_container(c):
         ),
         'embedding-dim': (
             'Embedding dimension to use for importing (default: 1536)'
-        )
-    }
+        ),
+    },
 )
-def import_demo_data(c, file=None, model=None, embedding_dim=1536, ):
+def import_demo_data(
+    c,
+    file=None,
+    model=None,
+    embedding_dim=1536,
+):
     """Import demo data into PostgreSQL database"""
+    # sanity check
     if not file:
         print('No files provided. Exiting.')
         return
-    c.run('install -d /tmp/demo_pgvector/files')
+
+    # copy source files to input file directory
     container_files = []
     for f in file:
+        # copy file and append to container_files
         c.run(f'cp {f} /tmp/demo_pgvector/files/')
         container_files.append('/files/{}'.format(os.path.basename(f)))
 
-    model = model or "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+        # copy metadata file if it exists
+        if os.path.exists(f'{f}.meta.yml'):
+            c.run(f'cp {f}.meta.yml /tmp/demo_pgvector/files/')
+
+    # define model, embedding dimensions
+    model = model or 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
     embedding_dim = embedding_dim or 1536
 
+    # build opts and run in container
     file_opts = [f'-f {f}' for f in container_files]
     model_opts = [f'--model {model}'] if model else []
     dim_opts = [f'--embedding-dim {embedding_dim}'] if embedding_dim else []
@@ -61,3 +78,9 @@ def import_demo_data(c, file=None, model=None, embedding_dim=1536, ):
             ' '.join(list(file_opts + model_opts + dim_opts))
         )
     )
+
+
+@task(namespace='db', name='purge', pre=[stop_docker_compose_env])
+def purge_db(c):
+    """Purge all data from PostgreSQL database"""
+    c.run('docker volume rm demo_pgvector_postgres_data')
