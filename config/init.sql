@@ -18,13 +18,13 @@ CREATE TABLE sources (
     model_id INTEGER REFERENCES models(id)
 );
 
-CREATE TABLE sim_chunks (
+CREATE TABLE source_chunks (
     id BIGSERIAL PRIMARY KEY,
     model_id INTEGER REFERENCES models(id)
     embedding vector(1536)
 );
 
-CREATE TABLE sim_chunk_data (
+CREATE TABLE source_chunk_data (
     id BIGSERIAL PRIMARY KEY,
     chunk_id INTEGER REFERENCES chunks(id),
     metadata JSONB,
