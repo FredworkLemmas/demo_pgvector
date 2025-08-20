@@ -78,3 +78,9 @@ def import_demo_data(
             ' '.join(list(file_opts + model_opts + dim_opts))
         )
     )
+
+
+@task(namespace='db', name='purge', pre=[stop_docker_compose_env])
+def purge_db(c):
+    """Purge all data from PostgreSQL database"""
+    c.run('docker volume rm demo_pgvector_postgres_data')
