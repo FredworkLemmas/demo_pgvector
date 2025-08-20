@@ -1,6 +1,10 @@
+from datetime import datetime
+
 import attrs
 from pathlib import Path
 from typing import Iterator
+
+import yaml
 from docling.chunking import HybridChunker
 from docling.document_converter import DocumentConverter
 from docling_core.transforms.chunker import BaseChunker
@@ -21,37 +25,28 @@ class SourceDocument(object):
 
     def __attrs_post_init__(self):
         self.chunker_class = self.chunker_class or HybridChunker()
-        self.metadata = self.metadata or {}
+        self.metadata = self.metadata or self._metadata_from_file()
         self.max_chunk_tokens = self.max_chunk_tokens or MAX_CHUNK_TOKENS
         self.model_name = (
             self.model_name or 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
         )
 
     def enriched_chunks(self):
-        for n, chunk in enumerate(self._chunk_iterator()):
+        import_date = datetime.datetime.now().isoformat()
+        for n, chunk in enumerate(self._raw_chunk_iterator()):
             yield SourceDocumentChunk(
                 text=chunk.text,
                 source_document=self,
                 metadata={
-                    **chunk.metadata,
-                    'source_filepath': self.source_filepath,
+                    **self.metadata,
                     'chunk_tokenizer_model': self.model_name,
                     'chunk_size': self.max_chunk_tokens,
                     'chunk_number': n,
+                    'import_date': import_date,
                 },
             )
 
-    def _as_docling_document(self):
-        # Validate that the file exists
-        if not Path(self.source_filepath).exists():
-            raise FileNotFoundError(f'File not found: {self.source_filepath}')
-        return (
-            DocumentConverter()
-            .convert(source=Path(self.source_filepath))
-            .document
-        )
-
-    def _chunk_iterator(self) -> Iterator:
+    def _raw_chunk_iterator(self) -> Iterator:
         """
         split doc into chunks
         """
@@ -63,6 +58,23 @@ class SourceDocument(object):
         chunker = HybridChunker(tokenizer=tokenizer)
 
         return chunker.chunk(document)
+
+    def _as_docling_document(self):
+        # Validate that the file exists
+        if not Path(self.source_filepath).exists():
+            raise FileNotFoundError(f'File not found: {self.source_filepath}')
+        return (
+            DocumentConverter()
+            .convert(source=Path(self.source_filepath))
+            .document
+        )
+
+    def _metadata_from_file(self):
+        p = Path(self.source_filepath)
+        metadata_path = p.with_name(p.name + '.meta.yml')
+        if metadata_path.exists():
+            return yaml.safe_load(metadata_path.read_text())
+        return {}
 
 
 @attrs.define
