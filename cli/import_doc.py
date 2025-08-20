@@ -7,7 +7,6 @@ import click
 from lib.documents import SourceDocument
 from lib.sources import SourceConverter
 
-
 DEFAULT_MODEL = 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
 DEFAULT_EMBEDDING_DIM = 1536
 INTERNAL_WORKDIR = '/work'
@@ -64,7 +63,7 @@ def main(files: tuple[str, ...], model: str, embedding_dim: int) -> None:
         document = SourceDocument(
             source_filepath=file, max_chunk_tokens=DEFAULT_EMBEDDING_DIM
         )
-        for i, chunk in enumerate(document._chunk_iterator()):
+        for i, chunk in enumerate(document._raw_chunk_iterator()):
             click.echo(f'Chunk {i}: \n{chunk.text}')
             # click.echo(f'chunk dict: {chunk.__dict__}')
             if i > 4:
