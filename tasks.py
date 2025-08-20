@@ -1,12 +1,14 @@
 import os
 from invocate import task
 
-# from lib.database import PgvectorDatabaseConnectionProvider
-# from lib.ingestor import PgvectorIngestor
-# from lib.settings import DemoSettingsProvider
+
+@task(namespace='env', name='init')
+def init_environment(c):
+    # make sure input file directory exists
+    c.run('install -d /tmp/demo_pgvector/files')
 
 
-@task(namespace='env', name='start')
+@task(namespace='env', name='start', pre=[init_environment])
 def start_docker_compose_env(c):
     c.run('docker compose up -d --remove-orphans')
 
@@ -25,10 +27,11 @@ def build_runner_container(c):
     namespace='demo',
     name='import',
     iterable=['file'],
+    pre=[init_environment],
     help={
         'file': (
             'Files to import (may be used multiple times, e.g., '
-            '--file file1.csv --file file2.csv)'
+            '--file file1.pdf --file file2.epub)'
         ),
         'model': (
             'Model to use for importing (default: '
@@ -51,10 +54,10 @@ def import_demo_data(
         print('No files provided. Exiting.')
         return
 
-    # make sure the input file directory exists and copy source files to it
-    c.run('install -d /tmp/demo_pgvector/files')
+    # copy source files to input file directory
     container_files = []
     for f in file:
+        # copy file and append to container_files
         c.run(f'cp {f} /tmp/demo_pgvector/files/')
         container_files.append('/files/{}'.format(os.path.basename(f)))
 
