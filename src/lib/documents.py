@@ -12,11 +12,16 @@ from docling_core.transforms.chunker.tokenizer.huggingface import (
     HuggingFaceTokenizer,
 )
 
+from lib.interfaces import PostgresqlConnectionProvider
+
 MAX_CHUNK_TOKENS = 512
+TExT_TYPE__FICTION = 1
+TEXT_TYPE__NONFICTION = 2
 
 
 @attrs.define
 class SourceDocument(object):
+    postgresql_connection_provider: PostgresqlConnectionProvider
     source_filepath: str
     metadata: dict | None = None
     chunker_class: type[BaseChunker] | None = None
@@ -45,6 +50,150 @@ class SourceDocument(object):
                     'import_date': import_date,
                 },
             )
+
+    def register_source(self):
+        """
+        Insert this source into the 'sources' table using self.metadata and ensure
+        a corresponding row exists in the 'models' table for self.model_name.
+
+        Returns:
+            int: The ID of the inserted (or existing) row in the 'sources' table.
+        """
+        from typing import Optional
+
+        # Lazy import so the module is only required when this method is called.
+        try:
+            pass  # psycopg 3.x
+        except Exception:
+            try:
+                pass  # fallback to psycopg2 if available
+            except Exception as e:
+                raise RuntimeError(
+                    'A PostgreSQL client library (psycopg or psycopg2) is required to register sources.'
+                ) from e
+
+        # Map text_type to source_type (simple heuristic)
+        def _map_source_type(meta: dict) -> int:
+            text_type = (meta.get('text_type') or '').strip().lower()
+            fiction_indicators = {
+                'short story',
+                'novel',
+                'novella',
+                'poem',
+                'fiction',
+                'science fiction',
+                'sci-fi',
+                'sf',
+                'fantasy',
+                'fable',
+                'drama',
+                'play',
+            }
+            if text_type in fiction_indicators:
+                return TExT_TYPE__FICTION
+            # If genre clearly implies fiction, treat it as fiction.
+            genre = (meta.get('genre') or '').strip().lower()
+            if genre in {
+                'science fiction',
+                'fantasy',
+                'horror',
+                'mystery',
+                'thriller',
+            }:
+                return TExT_TYPE__FICTION
+            return TEXT_TYPE__NONFICTION
+
+        def _extract_year(meta: dict) -> Optional[int]:
+            # Expecting 'publication_date' possibly as int, 'YYYY', or ISO date.
+            pub = meta.get('publication_date')
+            if pub is None:
+                return None
+            # Already an int-like
+            try:
+                return int(str(pub)[:4])
+            except Exception:
+                return None
+
+        meta = self.metadata or {}
+
+        author = meta.get('author')
+        title = meta.get('title')
+        url = meta.get('url')
+        genre = meta.get('genre')
+        subgenre = meta.get('subgenre')
+        source_type = _map_source_type(meta)
+        year = _extract_year(meta)
+        model_name = self.model_name or 'unknown-model'
+        # Default embedding dimension; aligns with source_chunks.embedding vector(1536)
+        embedding_dim = 1536
+
+        conn = self.postgresql_connection_provider.get_connection()
+
+        conn.autocommit = False
+        with conn.cursor() as cur:
+            # Ensure model row exists and get model_id
+            # Try insert; on conflict, fetch the existing id.
+            model_id: Optional[int] = None
+            try:
+                cur.execute(
+                    """
+                    INSERT INTO models (name, embedding_dim)
+                    VALUES (%s, %s)
+                    ON CONFLICT (name)
+                    DO UPDATE SET embedding_dim = EXCLUDED.embedding_dim
+                    RETURNING id
+                    """,
+                    (model_name, embedding_dim),
+                )
+                row = cur.fetchone()
+                if row:
+                    model_id = row[0]
+            except Exception:
+                # If RETURNING not supported or schema differs, fall back to select
+                conn.rollback()
+                with conn.cursor() as cur2:
+                    cur2.execute(
+                        'SELECT id FROM models WHERE name = %s', (model_name,)
+                    )
+                    row = cur2.fetchone()
+                    if row:
+                        model_id = row[0]
+                    else:
+                        # Try a plain insert without RETURNING and then select id
+                        cur2.execute(
+                            'INSERT INTO models (name, embedding_dim) VALUES (%s, %s)',
+                            (model_name, embedding_dim),
+                        )
+                        cur2.execute(
+                            'SELECT id FROM models WHERE name = %s',
+                            (model_name,),
+                        )
+                        row = cur2.fetchone()
+                        model_id = row[0] if row else None
+
+            # Insert into sources
+            cur.execute(
+                """
+                INSERT INTO sources (author, title, source_type, url, genre, subgenre, year, model_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    author,
+                    title,
+                    source_type,
+                    url,
+                    genre,
+                    subgenre,
+                    year,
+                    model_id,
+                ),
+            )
+            source_row = cur.fetchone()
+            source_id = source_row[0] if source_row else None
+        conn.commit()
+
+        return source_id
 
     def _raw_chunk_iterator(self) -> Iterator:
         """
