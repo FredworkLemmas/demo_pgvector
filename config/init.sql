@@ -30,16 +30,3 @@ CREATE TABLE source_chunk_data (
     metadata JSONB,
     compressed_text TEXT
 );
-
-CREATE TABLE source_summaries (
-    id SERIAL PRIMARY KEY,
-    model_id INTEGER REFERENCES models(id)
-    embedding vector(1536)
-);
-
-CREATE TABLE source_summary_data (
-    id SERIAL PRIMARY KEY,
-    summary_id INTEGER REFERENCES source_summaries(id),
-    compressed_text TEXT,
-    metadata JSONB
-);
