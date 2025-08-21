@@ -15,12 +15,15 @@ CREATE TABLE sources (
     genre TEXT,
     subgenre TEXT,
     year INTEGER,
-    model_id INTEGER REFERENCES models(id)
+    model_id INTEGER REFERENCES models(id),
+    UNIQUE (model_id, author, title, year)
 );
+
 
 CREATE TABLE source_chunks (
     id BIGSERIAL PRIMARY KEY,
-    model_id INTEGER REFERENCES models(id)
+    source_id INTEGER REFERENCES sources(id)
+    model_id INTEGER REFERENCES models(id),
     embedding vector(1536)
 );
 

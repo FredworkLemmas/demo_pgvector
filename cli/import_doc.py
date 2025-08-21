@@ -4,7 +4,9 @@
 import sys
 import click
 
+from lib.database import SimpleVectorDatabase
 from lib.documents import SourceDocument
+from lib.settings import DemoSettingsProvider
 from lib.sources import SourceConverter
 
 DEFAULT_MODEL = 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
@@ -41,33 +43,43 @@ def main(files: tuple[str, ...], model: str, embedding_dim: int) -> None:
         click.echo('No files provided. Exiting.')
         sys.exit(0)
 
-    # Initialize settings and database/ingestor components
-    # settings_provider = DemoSettingsProvider()
-    # connection_provider = (
-    #     PgvectorDatabaseConnectionProvider.from_settings_provider(
-    #         settings_provider
-    #     )
-    # )
+    # Initialize database
+    settings_provider = DemoSettingsProvider()
+    vector_database = SimpleVectorDatabase.from_settings_provider(
+        settings_provider
+    )
+
+    # # init ingestor
     # ingestor = PgvectorIngestor(
-    #     postgresql_connection_provider=connection_provider,
+    #     database=vector_database,
     #     model_name=model,
     #     embedding_dim=embedding_dim,
     # )
 
+    # init converter
     converter = SourceConverter(sources=list(files))
 
     print(f'Converting files: {list(files)}')
     print(f'Ingestion ready files: {converter.ingestion_ready_sources()}')
 
     for file in converter.ingestion_ready_sources():
+        # init document
         document = SourceDocument(
-            source_filepath=file, max_chunk_tokens=DEFAULT_EMBEDDING_DIM
+            source_filepath=file,
+            max_chunk_tokens=DEFAULT_EMBEDDING_DIM,
+            database=vector_database,
         )
-        for i, chunk in enumerate(document._raw_chunk_iterator()):
-            click.echo(f'Chunk {i}: \n{chunk.text}')
+
+        # ingest chunks
+        for chunk in document.enriched_chunks():
+            chunk_number = chunk.metadata.get('chunk_number')
+            click.echo(f'Chunk {chunk_number}: \n{chunk.text[0:40]}...')
+            click.echo(f'Chunk metadata: {chunk.metadata}')
             # click.echo(f'chunk dict: {chunk.__dict__}')
-            if i > 4:
+            if chunk_number > 4:
                 break
+
+            vector_database.store_embedding()
 
 
 if __name__ == '__main__':

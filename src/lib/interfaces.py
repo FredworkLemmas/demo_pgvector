@@ -7,6 +7,7 @@ class EmbeddingGenerator(ABC):
     def generate(self) -> Iterator[list[float]]:
         pass
 
+    @property
     @abstractmethod
     def model_name(self) -> str:
         pass
@@ -19,10 +20,6 @@ class TextGenerator(ABC):
 
 
 class EmbeddingIngestor(ABC):
-    @abstractmethod
-    def get_model_id(self) -> int:
-        pass
-
     @abstractmethod
     def ingest(
         self, embedding: list[float], text: str, metadata: dict = None
