@@ -25,14 +25,6 @@ DEFAULT_EMBEDDING_DIM = 1536
     help='Model to use for generating embeddings',
 )
 @click.option(
-    '--embedding-dim',
-    'embedding_dim',
-    default=DEFAULT_EMBEDDING_DIM,
-    show_default=True,
-    type=int,
-    help='Embedding dimension to use',
-)
-@click.option(
     '--top-k',
     'top_k',
     default=10,
@@ -51,7 +43,6 @@ DEFAULT_EMBEDDING_DIM = 1536
 def main(
     prompt: str,
     model: str,
-    embedding_dim: int,
     top_k: int,
     similarity_threshold: float,
 ) -> None:
@@ -79,7 +70,7 @@ def main(
         embedding_generator = DeepseekQwen15BEmbeddingGenerator(
             texts=[prompt],
             model_name=model,
-            embedding_dim=embedding_dim,
+            embedding_dim=DEFAULT_EMBEDDING_DIM,
         )
 
         # Get the embedding for the prompt
