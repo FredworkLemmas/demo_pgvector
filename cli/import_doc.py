@@ -11,7 +11,7 @@ from lib.settings import DemoSettingsProvider
 from lib.sources import SourceConverter
 
 DEFAULT_MODEL = 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
-DEFAULT_EMBEDDING_DIM = 1536
+EMBEDDING_DIM = 1536
 INTERNAL_WORKDIR = '/work'
 
 
@@ -30,15 +30,7 @@ INTERNAL_WORKDIR = '/work'
     show_default=True,
     help='Model to use for importing',
 )
-@click.option(
-    '--embedding-dim',
-    'embedding_dim',
-    default=DEFAULT_EMBEDDING_DIM,
-    show_default=True,
-    type=int,
-    help='Embedding dimension to use for importing',
-)
-def main(files: tuple[str, ...], model: str, embedding_dim: int) -> None:
+def main(files: tuple[str, ...], model: str) -> None:
     # Mirror original task behavior for missing files
     if not files:
         click.echo('No files provided. Exiting.')
@@ -57,7 +49,7 @@ def main(files: tuple[str, ...], model: str, embedding_dim: int) -> None:
         # init document
         document = SourceDocument(
             source_filepath=file,
-            max_chunk_tokens=DEFAULT_EMBEDDING_DIM,
+            max_chunk_tokens=EMBEDDING_DIM,
             database=vector_database,
         )
 
@@ -68,7 +60,7 @@ def main(files: tuple[str, ...], model: str, embedding_dim: int) -> None:
             DeepseekQwen15BEmbeddingGenerator(
                 texts=ordered_texts,
                 model_name=model,
-                embedding_dim=embedding_dim,
+                embedding_dim=EMBEDDING_DIM,
             ).generate()
         )
         for i, chunk in enumerate(ordered_chunks):
