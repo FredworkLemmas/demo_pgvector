@@ -90,11 +90,8 @@ def import_demo_data(c, file=None, model=None):
         ),
     },
 )
-def search_demo_data(
-    c, prompt, model=None, embedding_dim=1536, limit=10, threshold=0.7
-):
+def search_demo_data(c, prompt, model=None, limit=10, threshold=0.7):
     model = model or 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
-    embedding_dim = embedding_dim or 1536
 
     opts = [
         f'--prompt "{prompt}"',
@@ -110,13 +107,13 @@ def search_demo_data(
     )
 
 
-@task(namespace='db', name='purge', pre=[stop_docker_compose_env])
+@task(namespace='purge', name='db', pre=[stop_docker_compose_env])
 def purge_db(c):
     """Purge all data from PostgreSQL database"""
     c.run('docker volume rm demo_pgvector_postgres_data')
 
 
-@task(namespace='vllm', name='purge', pre=[stop_docker_compose_env])
+@task(namespace='purge', name='vllm', pre=[stop_docker_compose_env])
 def purge_vllm_cache(c):
     """Purge all data from PostgreSQL database"""
     c.run('docker volume rm model_cache')
