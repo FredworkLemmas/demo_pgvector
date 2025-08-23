@@ -4,11 +4,14 @@
 import sys
 import click
 
+from lib.database import SimpleVectorDatabase
 from lib.documents import SourceDocument
+from lib.embedding import DeepseekQwen15BEmbeddingGenerator
+from lib.settings import DemoSettingsProvider
 from lib.sources import SourceConverter
 
 DEFAULT_MODEL = 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
-DEFAULT_EMBEDDING_DIM = 1536
+EMBEDDING_DIM = 1536
 INTERNAL_WORKDIR = '/work'
 
 
@@ -27,47 +30,49 @@ INTERNAL_WORKDIR = '/work'
     show_default=True,
     help='Model to use for importing',
 )
-@click.option(
-    '--embedding-dim',
-    'embedding_dim',
-    default=DEFAULT_EMBEDDING_DIM,
-    show_default=True,
-    type=int,
-    help='Embedding dimension to use for importing',
-)
-def main(files: tuple[str, ...], model: str, embedding_dim: int) -> None:
+def main(files: tuple[str, ...], model: str) -> None:
     # Mirror original task behavior for missing files
     if not files:
         click.echo('No files provided. Exiting.')
         sys.exit(0)
 
-    # Initialize settings and database/ingestor components
-    # settings_provider = DemoSettingsProvider()
-    # connection_provider = (
-    #     PgvectorDatabaseConnectionProvider.from_settings_provider(
-    #         settings_provider
-    #     )
-    # )
-    # ingestor = PgvectorIngestor(
-    #     postgresql_connection_provider=connection_provider,
-    #     model_name=model,
-    #     embedding_dim=embedding_dim,
-    # )
+    # Initialize database
+    settings_provider = DemoSettingsProvider()
+    vector_database = SimpleVectorDatabase.from_settings_provider(
+        settings_provider
+    )
 
+    # init converter
     converter = SourceConverter(sources=list(files))
 
-    print(f'Converting files: {list(files)}')
-    print(f'Ingestion ready files: {converter.ingestion_ready_sources()}')
-
     for file in converter.ingestion_ready_sources():
+        # init document
         document = SourceDocument(
-            source_filepath=file, max_chunk_tokens=DEFAULT_EMBEDDING_DIM
+            source_filepath=file,
+            max_chunk_tokens=EMBEDDING_DIM,
+            database=vector_database,
         )
-        for i, chunk in enumerate(document._raw_chunk_iterator()):
-            click.echo(f'Chunk {i}: \n{chunk.text}')
-            # click.echo(f'chunk dict: {chunk.__dict__}')
-            if i > 4:
-                break
+
+        # ingest chunks
+        ordered_chunks = list(document.enriched_chunks())
+        ordered_texts = [chunk.text for chunk in ordered_chunks]
+        ordered_embeddings = list(
+            DeepseekQwen15BEmbeddingGenerator(
+                texts=ordered_texts,
+                model_name=model,
+                embedding_dim=EMBEDDING_DIM,
+            ).generate()
+        )
+        for i, chunk in enumerate(ordered_chunks):
+            vector_database.insert_source_chunk(
+                source_id=document.source_id,
+                model_id=vector_database.create_or_lookup_model_id(
+                    model_name=model
+                ),
+                embedding=ordered_embeddings[i],
+                metadata=chunk.metadata,
+                text=chunk.text,
+            )
 
 
 if __name__ == '__main__':

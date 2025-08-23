@@ -12,7 +12,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./config/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U demo -d pgvector_demo"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,17 +34,30 @@ services:
   runner:
     build: .
     container_name: runner
+    depends_on:
+      - pgdev
+      - redis
     environment:
       - PYTHONPATH=/app/src
       - SETTINGS_YAML=/app/settings/demo.yml
+      - VLLM_CACHE_ROOT=/model_cache
     profiles:
       - manual
     volumes:
       - ./:/app
       - /tmp/demo_pgvector/files:/files
       - tmp_workspace_data:/workspace
+      - model_cache:/model_cache
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 'all'  # 1 or 'all'
+              capabilities: ['gpu']
 
 volumes:
   postgres_data:
   redis_data:
   tmp_workspace_data:
+  model_cache:

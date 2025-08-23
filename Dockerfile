@@ -34,6 +34,9 @@ RUN chown appuser:appuser /app
 RUN mkdir /work
 RUN chown appuser:appuser /work
 
+RUN mkdir /model_cache
+RUN chown appuser:appuser /model_cache
+
 # Switch to non-root user
 USER appuser
 

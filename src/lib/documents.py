@@ -1,10 +1,10 @@
-from datetime import datetime
-
+import datetime
 import attrs
+import yaml
+import typing
 from pathlib import Path
 from typing import Iterator
 
-import yaml
 from docling.chunking import HybridChunker
 from docling.document_converter import DocumentConverter
 from docling_core.transforms.chunker import BaseChunker
@@ -12,16 +12,24 @@ from docling_core.transforms.chunker.tokenizer.huggingface import (
     HuggingFaceTokenizer,
 )
 
+if typing.TYPE_CHECKING:
+    from lib.database import SimpleVectorDatabase
+
 MAX_CHUNK_TOKENS = 512
+TEXT_TYPE__FICTION = 1
+TEXT_TYPE__NONFICTION = 2
 
 
 @attrs.define
 class SourceDocument(object):
+    database: 'SimpleVectorDatabase'
     source_filepath: str
     metadata: dict | None = None
     chunker_class: type[BaseChunker] | None = None
     max_chunk_tokens: int | None = None
     model_name: str | None = None
+    model_id: int | None = None
+    source_id: int | None = None
 
     def __attrs_post_init__(self):
         self.chunker_class = self.chunker_class or HybridChunker()
@@ -30,6 +38,12 @@ class SourceDocument(object):
         self.model_name = (
             self.model_name or 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
         )
+        self.model_id = (
+            self.model_id
+            or self.database.create_or_lookup_model_id(self.model_name)
+        )
+        # register source
+        self.source_id = self.database.create_or_lookup_source(self)
 
     def enriched_chunks(self):
         import_date = datetime.datetime.now().isoformat()
