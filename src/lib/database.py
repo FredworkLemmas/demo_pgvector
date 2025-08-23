@@ -1,7 +1,7 @@
-from typing import Optional
-
 import attrs
 import psycopg2
+from psycopg2.extras import Json  # added
+from typing import Optional
 
 from .documents import SourceDocument, TEXT_TYPE__FICTION, TEXT_TYPE__NONFICTION
 from .interfaces import PostgresqlConnectionProvider, SettingsProvider
@@ -50,7 +50,9 @@ class SimpleVectorDatabase:
         )
         return cls(connection_provider=connection_provider)
 
-    def create_or_lookup_model_id(self, model_name: str) -> int:
+    def create_or_lookup_model_id(
+        self, model_name: str, embedding_dim: int = 1536
+    ) -> int:
         # get connection
         conn = self.connection_provider.get_connection()
         cursor = conn.cursor()
@@ -69,7 +71,7 @@ class SimpleVectorDatabase:
                 # Model doesn't exist, create it
                 cursor.execute(
                     'INSERT INTO models (name, embedding_dim) VALUES (%s, %s) RETURNING id',
-                    (model_name, self.embedding_dim),
+                    (model_name, embedding_dim),
                 )
                 model_id = cursor.fetchone()[0]
 
@@ -205,3 +207,124 @@ class SimpleVectorDatabase:
                     conn.rollback()
             except Exception:
                 pass
+
+    def insert_source_chunk(
+        self,
+        source_id: int,
+        model_id: int,
+        embedding: list[float],
+        text: str,
+        metadata: dict = None,
+    ):
+        # Validate embedding dimension (table uses vector(1536))
+        if embedding is None or not isinstance(embedding, (list, tuple)):
+            raise ValueError('embedding must be a list or tuple of floats')
+
+        # Prepare vector literal for pgvector
+        embedding_str = '[' + ','.join(str(float(x)) for x in embedding) + ']'
+
+        conn = self.connection_provider.get_connection()
+        conn.autocommit = False
+        try:
+            with conn.cursor() as cur:
+                # Insert into source_chunks and get generated chunk id
+                cur.execute(
+                    """
+                    INSERT INTO source_chunks (source_id, model_id, embedding)
+                    VALUES (%s, %s, %s)
+                    RETURNING id
+                    """,
+                    (source_id, model_id, embedding_str),
+                )
+                chunk_id = cur.fetchone()[0]
+
+                # Insert corresponding data row
+                cur.execute(
+                    """
+                    INSERT INTO source_chunk_data (chunk_id, metadata, chunk_text)
+                    VALUES (%s, %s, %s)
+                    """,
+                    (
+                        chunk_id,
+                        Json(metadata) if metadata is not None else None,
+                        text,
+                    ),
+                )
+
+            conn.commit()
+            return chunk_id
+        except Exception:
+            # Rollback on any error before re-raising
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            raise
+        finally:
+            # Ensure connection isn't left mid-transaction
+            try:
+                if (
+                    conn.closed == 0
+                    and conn.get_transaction_status()
+                    != psycopg2.extensions.TRANSACTION_STATUS_IDLE
+                ):
+                    conn.rollback()
+            except Exception:
+                pass
+
+    def retrieve_similar_source_chunks(
+        self,
+        query_embedding: list[float],
+        top_k: int = 10,
+        similarity_threshold: float = 0.7,
+    ) -> list[dict]:
+        """
+        Retrieve similar source chunks with their text and metadata using a single query with JOIN.
+
+        Args:
+            query_embedding: The embedding vector to search for
+            top_k: Number of top results to return
+            similarity_threshold: Minimum similarity score threshold
+
+        Returns:
+            List of dictionaries containing chunk_id, similarity_score, chunk_text, and metadata
+        """
+        query = """
+                SELECT sc.id as                             chunk_id, \
+                       1 - (sc.embedding <=> %s::vector) as similarity_score, \
+                       scd.chunk_text, \
+                       scd.metadata
+                FROM source_chunks sc
+                         INNER JOIN source_chunk_data scd ON sc.id = scd.chunk_id
+                WHERE 1 - (sc.embedding <=> %s::vector) >= %s
+                ORDER BY sc.embedding <=> %s::vector ASC
+                    LIMIT %s; \
+                """
+
+        conn = self.connection_provider.get_connection()
+
+        with conn.cursor() as cursor:
+            # Convert embedding to string format for PostgreSQL vector type
+            embedding_str = str(query_embedding)
+            cursor.execute(
+                query,
+                (
+                    embedding_str,
+                    embedding_str,
+                    similarity_threshold,
+                    embedding_str,
+                    top_k,
+                ),
+            )
+            results = cursor.fetchall()
+
+            return [
+                {
+                    'chunk_id': row[0],
+                    'similarity_score': float(row[1]),
+                    'chunk_text': row[2],
+                    'metadata': row[3],
+                    # JSONB field will be automatically parsed
+                }
+                for row in results
+            ]

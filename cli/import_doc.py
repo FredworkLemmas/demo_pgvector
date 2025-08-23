@@ -6,6 +6,7 @@ import click
 
 from lib.database import SimpleVectorDatabase
 from lib.documents import SourceDocument
+from lib.embedding import DeepseekQwen15BEmbeddingGenerator
 from lib.settings import DemoSettingsProvider
 from lib.sources import SourceConverter
 
@@ -49,18 +50,8 @@ def main(files: tuple[str, ...], model: str, embedding_dim: int) -> None:
         settings_provider
     )
 
-    # # init ingestor
-    # ingestor = PgvectorIngestor(
-    #     database=vector_database,
-    #     model_name=model,
-    #     embedding_dim=embedding_dim,
-    # )
-
     # init converter
     converter = SourceConverter(sources=list(files))
-
-    print(f'Converting files: {list(files)}')
-    print(f'Ingestion ready files: {converter.ingestion_ready_sources()}')
 
     for file in converter.ingestion_ready_sources():
         # init document
@@ -71,15 +62,25 @@ def main(files: tuple[str, ...], model: str, embedding_dim: int) -> None:
         )
 
         # ingest chunks
-        for chunk in document.enriched_chunks():
-            chunk_number = chunk.metadata.get('chunk_number')
-            click.echo(f'Chunk {chunk_number}: \n{chunk.text[0:40]}...')
-            click.echo(f'Chunk metadata: {chunk.metadata}')
-            # click.echo(f'chunk dict: {chunk.__dict__}')
-            if chunk_number > 4:
-                break
-
-            vector_database.store_embedding()
+        ordered_chunks = list(document.enriched_chunks())
+        ordered_texts = [chunk.text for chunk in ordered_chunks]
+        ordered_embeddings = list(
+            DeepseekQwen15BEmbeddingGenerator(
+                texts=ordered_texts,
+                model_name=model,
+                embedding_dim=embedding_dim,
+            ).generate()
+        )
+        for i, chunk in enumerate(ordered_chunks):
+            vector_database.insert_source_chunk(
+                source_id=document.source_id,
+                model_id=vector_database.create_or_lookup_model_id(
+                    model_name=model
+                ),
+                embedding=ordered_embeddings[i],
+                metadata=chunk.metadata,
+                text=chunk.text,
+            )
 
 
 if __name__ == '__main__':

@@ -23,11 +23,16 @@ def build_runner_container(c):
     c.run('docker compose build runner')
 
 
+@task(namespace='env', name='cleanup')
+def cleanup_demo_env(c):
+    c.run('sudo rm -rf /tmp/demo_pgvector')
+
+
 @task(
     namespace='demo',
     name='import',
     iterable=['file'],
-    pre=[init_environment],
+    pre=[cleanup_demo_env, init_environment],
     help={
         'file': (
             'Files to import (may be used multiple times, e.g., '
@@ -80,7 +85,52 @@ def import_demo_data(
     )
 
 
+@task(
+    namespace='demo',
+    name='search',
+    help={
+        'prompt': ('The text prompt used to search for similar chunks'),
+        'model': (
+            'Model to use for importing (default: '
+            'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B)'
+        ),
+        'embedding-dim': (
+            'Embedding dimension to use for importing (default: 1536)'
+        ),
+        'limit': 'Max number of results to return (default: 10)',
+        'threshold': (
+            'Similarity threshold to use for filtering results (default: 0.7)'
+        ),
+    },
+)
+def search_demo_data(
+    c, prompt, model=None, embedding_dim=1536, limit=10, threshold=0.7
+):
+    model = model or 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
+    embedding_dim = embedding_dim or 1536
+
+    opts = [
+        f'--prompt "{prompt}"',
+        f'--model {model}',
+        f'--embedding-dim {embedding_dim}',
+        f'--top-k {limit}',
+        f'--similarity-threshold {threshold}',
+    ]
+
+    c.run(
+        'docker compose run runner python3 cli/search_doc_chunks.py {}'.format(
+            ' '.join(opts)
+        )
+    )
+
+
 @task(namespace='db', name='purge', pre=[stop_docker_compose_env])
 def purge_db(c):
     """Purge all data from PostgreSQL database"""
     c.run('docker volume rm demo_pgvector_postgres_data')
+
+
+@task(namespace='vllm', name='purge', pre=[stop_docker_compose_env])
+def purge_vllm_cache(c):
+    """Purge all data from PostgreSQL database"""
+    c.run('docker volume rm model_cache')

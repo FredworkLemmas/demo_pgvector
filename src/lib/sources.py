@@ -66,7 +66,6 @@ class EPUBSourceConversionTool(BaseSourceConversionTool):
 
     def convert(self, source: str) -> str:
         output_path = self.converted_path(source)
-        print(f'output_path: {output_path}')
         return self.convert_epub_advanced(source, output_path)
 
     def convert_epub_to_markdown_pypandoc(
