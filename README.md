@@ -13,7 +13,6 @@ This is a simple proof-of-concept that will use:
 Please note that this is a proving ground and is not intended for
 production use.  THERE ARE NO TESTS!  HERE BE DRAGONS!
 
-
 ## Usage instructions for Linux users
 _NOTE that may only apply for Ubuntu 24.04 users as of August 22, 2025.  It
 further may only work for folks who have a couple of Nvidia 3060TIs._
