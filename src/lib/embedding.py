@@ -2,18 +2,18 @@ from typing import Iterator
 
 import attrs
 import numpy as np
-import torch
 from transformers import AutoTokenizer
-from vllm import LLM, SamplingParams
+from vllm import SamplingParams
 
 from lib.interfaces import EmbeddingGenerator
+from lib.llms import LLMManager
 
 
 @attrs.define
 class DeepseekQwen15BEmbeddingGenerator(EmbeddingGenerator):
     texts: Iterator[str]
     model_name: str | None = None
-    llm: LLM | None = None
+    # llm: LLM | None = None
     tokenizer: AutoTokenizer | None = None
     embedding_dim: int | None = None
 
@@ -25,26 +25,6 @@ class DeepseekQwen15BEmbeddingGenerator(EmbeddingGenerator):
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.model_name, trust_remote_code=True
         )
-        has_cuda = torch.cuda.is_available()
-
-        # Only construct vLLM when a GPU is available for versions that don't support CPU.
-        if has_cuda:
-            dtype = 'float16'
-            llm_kwargs = dict(
-                model=self.model_name,
-                trust_remote_code=True,
-                max_model_len=2048,
-                tensor_parallel_size=1,
-                dtype=dtype,
-                enforce_eager=True,
-                gpu_memory_utilization=0.8,
-                download_dir='/model_cache',
-            )
-            self.llm = LLM(**llm_kwargs)
-        else:
-            # No GPU available and current vLLM build likely lacks CPU support.
-            # We skip LLM generation and rely on the heuristic embedding path.
-            self.llm = None
 
     def generate(self) -> Iterator[list[float]]:
         for text in self.texts:
@@ -64,7 +44,8 @@ class DeepseekQwen15BEmbeddingGenerator(EmbeddingGenerator):
             )
 
             # Generate response to engage the model's understanding
-            outputs = self.llm.generate([prompt], sampling_params)
+            llm = LLMManager(model_name=self.model_name).instance()
+            outputs = llm.generate([prompt], sampling_params)
 
             # For now, we'll create embeddings based on the text and response
             # In a full implementation, you'd extract actual hidden states

@@ -107,6 +107,31 @@ def search_demo_data(c, prompt, model=None, limit=10, threshold=0.7):
     )
 
 
+@task(
+    namespace='demo',
+    name='generate',
+    help={
+        'prompt': ('The text prompt used to generate text'),
+        'model': (
+            'Model to use for generating text (default: '
+            'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B)'
+        ),
+    },
+)
+def generate_demo_data(c, prompt, model=None):
+    model = model or 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
+
+    opts = [
+        f'--prompt "{prompt}"',
+        f'--model {model}',
+    ]
+    c.run(
+        'docker compose run runner python3 cli/generate_text.py {}'.format(
+            ' '.join(opts)
+        )
+    )
+
+
 @task(namespace='purge', name='db', pre=[stop_docker_compose_env])
 def purge_db(c):
     """Purge all data from PostgreSQL database"""
