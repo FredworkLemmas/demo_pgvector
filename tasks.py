@@ -161,3 +161,8 @@ def run_example(c):
     ]
     file_opts = ' '.join([f'--file examples/{f}' for f in epub_files])
     c.run(f'nv demo.import {file_opts}')
+
+    c.run(
+        'nv demo.generate -p '
+        '"Are robots generally friendly to humans? If not, why not?"'
+    )
