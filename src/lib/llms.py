@@ -17,7 +17,7 @@ class LLMManager:
                 _the_llm = LLM(
                     model=self.model_name,
                     trust_remote_code=True,
-                    max_model_len=2048,
+                    max_model_len=8192,
                     tensor_parallel_size=1,
                     dtype='float16',
                     enforce_eager=True,

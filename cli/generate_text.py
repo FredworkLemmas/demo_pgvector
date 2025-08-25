@@ -107,7 +107,7 @@ information and, if you can appropriately determine the category, genre,
 author, etc. for information that might prove helpful, suggest how the library
 might be expanded to include more information.
 
-Thr prompt to which you must respond is:
+The prompt to which you must respond is:
     "{prompt}"
 """
 
@@ -123,11 +123,13 @@ When you consulted the library for information related to the prompt
 '''
 
 Please respond to the following prompt and, if the information from the library
-is relevant, use the information to respond to the prompt.
-
-Include references to the source data by including the few lines of text from
+is relevant, use the information to respond to the prompt. Include references
+to the source data by including the few lines of text from
 the source data that contain the information you are referring to along with the
 author, title of the work and the publication date.
+
+The prompt to which you must respond is:
+    "{prompt}"
 """
 
     return contextualized_prompt
@@ -144,7 +146,7 @@ author, title of the work and the publication date.
 )
 @click.option(
     '--max-tokens',
-    default=500,
+    default=5000,
     help='Maximum number of tokens to generate (default: 100)',
 )
 @click.option(
@@ -178,7 +180,7 @@ def generate_text(prompt, model, max_tokens, temperature):
         click.echo('=' * 50)
 
     except Exception as e:
-        click.echo(f'Error: {e}', err=True)
+        click.echo(f'Error({e.__class__.__name__}): {e}', err=True)
         raise click.Abort()
 
 

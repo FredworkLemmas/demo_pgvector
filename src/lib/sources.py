@@ -165,9 +165,16 @@ class EPUBSourceConversionTool(BaseSourceConversionTool):
         )
 
 
+@attrs.define
+class SourceCollection:
+    source_filepath: str
+    embeddable_filepath: str | None = None
+    source_metadata_filepath: str | None = None
+
+
 class SourceConverter:
     raw_sources: Iterable[str] = None
-    processed_sources: Iterable[str] = None
+    processed_sources: Iterable[SourceCollection] = None
     type_to_conversion_class: dict[str, SourceConversionTool] | None = None
     conversion_tools: list[SourceConversionTool] = [EPUBSourceConversionTool]
 
@@ -196,7 +203,7 @@ class SourceConverter:
         ]
         return converter_class().convert(source)
 
-    def ingestion_ready_sources(self) -> list[str]:
+    def ingestion_ready_sources(self) -> list[SourceCollection]:
         if self.processed_sources:
             return self.processed_sources
 
@@ -206,10 +213,18 @@ class SourceConverter:
         for file in self.raw_sources:
             if not converter.needs_conversion(file):
                 # print(f'adding unconverted file: {file}')
-                self.processed_sources.append(file)
+                self.processed_sources.append(
+                    SourceCollection(
+                        source_filepath=file, embeddable_filepath=file
+                    )
+                )
                 continue
             if converter.is_convertible(file):
                 # print(f'adding converted file: {file}')
                 converted_file = converter.convert(file)
-                self.processed_sources.append(converted_file)
+                self.processed_sources.append(
+                    SourceCollection(
+                        source_filepath=file, embeddable_filepath=converted_file
+                    )
+                )
         return self.processed_sources

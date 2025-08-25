@@ -42,10 +42,10 @@ def main(files: tuple[str, ...], model: str) -> None:
     # init converter
     converter = SourceConverter(sources=list(files))
 
-    for file in converter.ingestion_ready_sources():
+    for source in converter.ingestion_ready_sources():
         # init document
         document = SourceDocument(
-            source_filepath=file,
+            source=source,
             max_chunk_tokens=DEFAULT_EMBEDDING_DIM,
             database=vector_database,
         )
