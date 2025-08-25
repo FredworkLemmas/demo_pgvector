@@ -46,6 +46,7 @@ class SourceDocument(object):
         self.source_id = self.database.create_or_lookup_source(self)
 
     def enriched_chunks(self):
+        print(f'source doc metadata: {self.metadata}')
         import_date = datetime.datetime.now().isoformat()
         for n, chunk in enumerate(self._raw_chunk_iterator()):
             yield SourceDocumentChunk(
@@ -86,7 +87,9 @@ class SourceDocument(object):
     def _metadata_from_file(self):
         p = Path(self.source_filepath)
         metadata_path = p.with_name(p.name + '.meta.yml')
+        print(f'looking for metdata file: {metadata_path}')
         if metadata_path.exists():
+            print('...loading metadatafile')
             return yaml.safe_load(metadata_path.read_text())
         return {}
 

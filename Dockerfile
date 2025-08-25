@@ -31,8 +31,8 @@ RUN chown -R appuser:appuser /venv
 WORKDIR /app
 RUN chown appuser:appuser /app
 
-RUN mkdir /work
-RUN chown appuser:appuser /work
+RUN mkdir /workspace
+RUN chown appuser:appuser /workspace
 
 RUN mkdir /model_cache
 RUN chown appuser:appuser /model_cache

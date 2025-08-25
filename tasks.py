@@ -147,7 +147,10 @@ def purge_vllm_cache(c):
 @task(namespace='example', name='load_and_query_1')
 def run_example(c):
     # purge database
+    c.run('nv env.start')
     c.run('nv purge.db')
+    c.run('nv env.stop')
+    c.run('nv env.start')
 
     # import epub files to vector database
     epub_files = [

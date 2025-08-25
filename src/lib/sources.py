@@ -1,14 +1,13 @@
-from pathlib import Path
-from typing import Iterable
-
 import attrs
 import magic
 import os
 import pypandoc
 
-from lib.interfaces import SourceConversionTool
+from pathlib import Path
+from typing import Iterable
 
-INTERNAL_WORKDIR = '/work'
+from lib.constants import INTERNAL_WORKDIR
+from lib.interfaces import SourceConversionTool
 
 
 @attrs.define

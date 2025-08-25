@@ -66,6 +66,8 @@ def _get_aggregated_chunk_text(similar_chunks):
         for chunk in similar_chunks:
             m = chunk['metadata']
             txt = chunk['chunk_text']
+
+            print(f'chunk metadata: {chunk["metadata"]}')
             agg_chunk_text += f"""
 Excerpt from "{m['title']}", by {m['author']}, published in {m['publication_date']}:
 >>>
@@ -161,9 +163,11 @@ def generate_text(prompt, model, max_tokens, temperature):
             temperature=temperature, max_tokens=max_tokens
         )
 
+        contextualized_prompt = _get_contextualized_prompt(prompt, model)
+
         # Generate text
-        click.echo(f"Generating text for prompt: '{prompt}'")
-        outputs = llm.generate([prompt], sampling_params)
+        click.echo(f"Generating text for prompt: '{contextualized_prompt}'")
+        outputs = llm.generate([contextualized_prompt], sampling_params)
 
         # Display the result
         generated_text = outputs[0].outputs[0].text

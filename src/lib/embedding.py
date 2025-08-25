@@ -44,9 +44,9 @@ class DeepseekQwen15BEmbeddingGenerator(EmbeddingGenerator):
             )
 
             # Generate response to engage the model's understanding
-            print('>>>>>>AAAAAAAAAAAA')
+            # print('>>>>>>AAAAAAAAAAAA')
             llm = LLMManager(model_name=self.model_name).instance()
-            print('>>>>>>ZZZZZZZZZZZZ')
+            # print('>>>>>>ZZZZZZZZZZZZ')
             outputs = llm.generate([prompt], sampling_params)
 
             # For now, we'll create embeddings based on the text and response
