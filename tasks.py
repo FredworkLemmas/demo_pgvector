@@ -118,7 +118,7 @@ def search_demo_data(c, prompt, model=None, limit=10, threshold=0.7):
         ),
     },
 )
-def generate_demo_data(c, prompt, model=None):
+def generate_text(c, prompt, model=None):
     model = model or 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
 
     opts = [
