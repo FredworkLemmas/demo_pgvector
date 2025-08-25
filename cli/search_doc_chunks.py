@@ -4,12 +4,10 @@
 import click
 import sys
 
+from lib.constants import DEFAULT_MODEL, DEFAULT_EMBEDDING_DIM
 from lib.database import SimpleVectorDatabase
 from lib.embedding import DeepseekQwen15BEmbeddingGenerator
 from lib.settings import DemoSettingsProvider
-
-DEFAULT_MODEL = 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
-DEFAULT_EMBEDDING_DIM = 1536
 
 
 @click.command(help='Search for document chunks similar to a given prompt')

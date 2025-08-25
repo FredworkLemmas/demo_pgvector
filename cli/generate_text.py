@@ -2,7 +2,7 @@ import sys
 import click
 from vllm import SamplingParams
 
-from cli.search_doc_chunks import DEFAULT_EMBEDDING_DIM
+from lib.constants import DEFAULT_MODEL, DEFAULT_EMBEDDING_DIM
 from lib.database import SimpleVectorDatabase
 from lib.embedding import DeepseekQwen15BEmbeddingGenerator
 from lib.llms import LLMManager
@@ -137,7 +137,7 @@ author, title of the work and the publication date.
 )
 @click.option(
     '--model',
-    default='deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B',
+    default=DEFAULT_MODEL,
     help='The model to use for text generation (default: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B)',
 )
 @click.option(

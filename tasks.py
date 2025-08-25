@@ -146,13 +146,15 @@ def purge_vllm_cache(c):
 
 @task(namespace='example', name='load_and_query_1')
 def run_example(c):
-    # get epub files in examples directory as a list
+    # purge database
+    c.run('nv purge.db')
+
+    # import epub files to vector database
     epub_files = [
         f
         for f in os.listdir('examples')
         if os.path.isfile(os.path.join('examples', f))
         and f.lower().endswith('.epub')
     ]
-    # import epub files to vector database
     file_opts = ' '.join([f'--file examples/{f}' for f in epub_files])
     c.run(f'nv demo.import {file_opts}')
