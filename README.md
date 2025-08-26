@@ -85,7 +85,7 @@ The `env.*` tasks control the docker environment.
 To demostrate the complete workflow, the `example.load-and-query-1` task will:
 
 * purge the database
-* import 5 books about robots that I found in Project Gutenberg
+* import 5 books about robots that I found in [Project Gutenberg](https://www.gutenberg.org/ebooks/search/?query=robot)
 * and then do a RAG query about how friendly sci-fi robots are
 
 The relevant bits of a TON of output are:
@@ -174,3 +174,11 @@ This proof-of-concept proved a bunch of useful concepts:
   and it looks like it can store/load the KV cache to disk to speed up inference
   for prompts that begin with the same string of text.
 * Docling seems pretty capable for chunking markdown.
+
+# ADDITIONAL NOTES
+
+* there is an error that seems to occur only after inference is complete and,
+  so far, I've not had much luck getting rid of it:
+    ```text
+    ERROR 08-26 03:58:32 [core_client.py:562] Engine core proc EngineCore_0 died unexpectedly, shutting down client.
+    ```
