@@ -23,6 +23,8 @@ TEXT_TYPE__NONFICTION = 2
 
 @attrs.define
 class SourceDocument(object):
+    """Class for source document."""
+
     database: 'SimpleVectorDatabase'
     source: typing.Optional[typing.Union['SourceCollection', None]] = None
     metadata: dict | None = None
@@ -47,7 +49,7 @@ class SourceDocument(object):
         self.source_id = self.database.create_or_lookup_source(self)
 
     def enriched_chunks(self):
-        print(f'source doc metadata: {self.metadata}')
+        """Iterator over enriched chunks."""
         import_date = datetime.datetime.now().isoformat()
         for n, chunk in enumerate(self._raw_chunk_iterator()):
             yield SourceDocumentChunk(
@@ -76,6 +78,7 @@ class SourceDocument(object):
         return chunker.chunk(document)
 
     def _as_docling_document(self):
+        """Convert source to docling document."""
         # Validate that the file exists
         embeddable_filepath = self.source.embeddable_filepath
         if not Path(embeddable_filepath).exists():
@@ -87,17 +90,18 @@ class SourceDocument(object):
         )
 
     def _metadata_from_file(self):
+        """Load metadata from file."""
         p = Path(self.source.source_filepath)
         metadata_path = p.with_name(p.name + '.meta.yml')
-        print(f'looking for metdata file: {metadata_path}')
         if metadata_path.exists():
-            print('...loading metadatafile')
             return yaml.safe_load(metadata_path.read_text())
         return {}
 
 
 @attrs.define
 class SourceDocumentChunk:
+    """Class for source document chunk."""
+
     text: str
     source_document: SourceDocument
     metadata: dict

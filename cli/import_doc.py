@@ -1,3 +1,4 @@
+"""A click script for importing data into a vector database."""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 

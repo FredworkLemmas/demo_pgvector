@@ -4,27 +4,32 @@ from invocate import task
 
 @task(namespace='env', name='init')
 def init_environment(c):
+    """Initialize environment for running demo."""
     # make sure input file directory exists
     c.run('install -d /tmp/demo_pgvector/files')
 
 
 @task(namespace='env', name='start', pre=[init_environment])
 def start_docker_compose_env(c):
+    """Start docker compose environment."""
     c.run('docker compose up -d --remove-orphans')
 
 
 @task(namespace='env', name='stop')
 def stop_docker_compose_env(c):
+    """Stop docker compose environment."""
     c.run('docker compose down --remove-orphans')
 
 
 @task(namespace='env', name='build', pre=[stop_docker_compose_env])
 def build_runner_container(c):
+    """Build runner container."""
     c.run('docker compose build runner')
 
 
 @task(namespace='env', name='cleanup')
 def cleanup_demo_env(c):
+    """Cleanup demo environment."""
     c.run('sudo rm -rf /tmp/demo_pgvector')
 
 
@@ -91,6 +96,7 @@ def import_demo_data(c, file=None, model=None):
     },
 )
 def search_demo_data(c, prompt, model=None, limit=10, threshold=0.7):
+    """Search for similar chunks in the demo database."""
     model = model or 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
 
     opts = [
@@ -119,6 +125,7 @@ def search_demo_data(c, prompt, model=None, limit=10, threshold=0.7):
     },
 )
 def generate_text(c, prompt, model=None):
+    """Generate text using LLM with the specified prompt and model."""
     model = model or 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
 
     opts = [
@@ -146,6 +153,7 @@ def purge_vllm_cache(c):
 
 @task(namespace='example', name='load_and_query_1')
 def run_example(c):
+    """Run example workflow."""
     # purge database
     c.run('nv env.start')
     c.run('nv purge.db')
@@ -164,5 +172,6 @@ def run_example(c):
 
     c.run(
         'nv demo.generate -p '
-        '"Are robots generally friendly to humans? If not, why not?"'
+        '"Are robots that are depicted in science fiction generally '
+        'friendly to humans? If not, why not?"'
     )

@@ -1,3 +1,5 @@
+"""A click script for generating text using an LLM and a vector database."""
+
 import sys
 import click
 from vllm import SamplingParams
@@ -12,6 +14,7 @@ SIMILARITY_THRESHOLD = 0.01
 
 
 def _generate_embedding(prompt, model) -> list[float]:
+    """Generate embedding for the prompt."""
     try:
         embedding_generator = DeepseekQwen15BEmbeddingGenerator(
             texts=[prompt],
@@ -30,6 +33,7 @@ def _generate_embedding(prompt, model) -> list[float]:
 
 
 def _get_vector_database():
+    """Initialize the vector database."""
     # Initialize database
     settings_provider = DemoSettingsProvider()
     vector_database = SimpleVectorDatabase.from_settings_provider(
@@ -39,6 +43,7 @@ def _get_vector_database():
 
 
 def _fetch_similar_chunks(prompt_embedding, top_k, similarity_threshold):
+    """Fetch similar chunks from the database."""
     vector_database = _get_vector_database()
     try:
         similar_chunks = vector_database.retrieve_similar_source_chunks(
@@ -61,6 +66,7 @@ def _fetch_similar_chunks(prompt_embedding, top_k, similarity_threshold):
 
 
 def _get_aggregated_chunk_text(similar_chunks):
+    """Aggregate chunk text from similar chunks."""
     agg_chunk_text = ''
     if similar_chunks:
         for chunk in similar_chunks:
@@ -80,6 +86,7 @@ Excerpt from "{m['title']}", by {m['author']}, published in {m['publication_date
 
 
 def _get_contextualized_prompt(prompt, model):
+    """Get contextualized prompt."""
     # generate embedding for prompt
     brief_prompt = prompt[:100] + '...' if len(prompt) > 100 else prompt
     click.echo(f"Generating embedding for prompt: '{brief_prompt}'")

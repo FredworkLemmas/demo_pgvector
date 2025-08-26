@@ -7,9 +7,12 @@ _the_llm = None
 
 @attrs.define
 class LLMManager:
+    """Simple class to manage LLMs."""
+
     model_name: str
 
     def instance(self) -> LLM:
+        """Return singleton instance of the LLM."""
         global _the_llm
         if not _the_llm:
             has_cuda = torch.cuda.is_available()

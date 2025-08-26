@@ -1,3 +1,4 @@
+"""A click script for searching for doc chunks similar to a given prompt."""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 

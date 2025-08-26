@@ -1,6 +1,0 @@
----
-processes:
-  - name: ingestion
-    config:
-      use_meta_file_if_present: yes
-      store_text_chunks: yes

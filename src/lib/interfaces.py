@@ -13,41 +13,41 @@ class EmbeddingGenerator(ABC):
         pass
 
 
-class TextGenerator(ABC):
-    @abstractmethod
-    def generate(self) -> Iterator[str]:
-        pass
+# class TextGenerator(ABC):
+#     @abstractmethod
+#     def generate(self) -> Iterator[str]:
+#         pass
 
 
-class EmbeddingIngestor(ABC):
-    @abstractmethod
-    def ingest(
-        self, embedding: list[float], text: str, metadata: dict = None
-    ) -> None:
-        pass
-
-    @abstractmethod
-    def bulk_ingest(
-        self, data: list[tuple[int, list[float], str, dict]]
-    ) -> None:
-        pass
-
-
-class EmbeddingQueryProvider(ABC):
-    @abstractmethod
-    def similar(
-        self,
-        embedding: list[float],
-        limit: int = 5,
-        fields: Iterator[str] = ('embedding', 'text', 'metadata'),
-    ) -> Iterator[tuple]:
-        pass
+# class EmbeddingIngestor(ABC):
+#     @abstractmethod
+#     def ingest(
+#         self, embedding: list[float], text: str, metadata: dict = None
+#     ) -> None:
+#         pass
+#
+#     @abstractmethod
+#     def bulk_ingest(
+#         self, data: list[tuple[int, list[float], str, dict]]
+#     ) -> None:
+#         pass
 
 
-class LLMModelProvider(ABC):
-    @abstractmethod
-    def generate(self) -> Iterator[str]:
-        pass
+# class EmbeddingQueryProvider(ABC):
+#     @abstractmethod
+#     def similar(
+#         self,
+#         embedding: list[float],
+#         limit: int = 5,
+#         fields: Iterator[str] = ('embedding', 'text', 'metadata'),
+#     ) -> Iterator[tuple]:
+#         pass
+
+
+# class LLMModelProvider(ABC):
+#     @abstractmethod
+#     def generate(self) -> Iterator[str]:
+#         pass
 
 
 class PostgresqlConnectionProvider(ABC):

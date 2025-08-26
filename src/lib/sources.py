@@ -2,7 +2,6 @@ import attrs
 import magic
 import os
 import pypandoc
-
 from pathlib import Path
 from typing import Iterable
 
@@ -12,6 +11,8 @@ from lib.interfaces import SourceConversionTool
 
 @attrs.define
 class SourceIdentifier:
+    """Simple class to identify a file type."""
+
     path: str
 
     def _magic_identifier(self) -> str:
@@ -22,12 +23,16 @@ class SourceIdentifier:
 
 
 class BaseSourceConversionTool(object):
+    """Base class for source conversion tools."""
+
     converted_suffix: str = None
 
     def convertable_types(self) -> list[str]:
+        """Return a list of file types that this tool can convert."""
         return []
 
     def convert(self, source: str) -> str:
+        """Convert a source file to a new format."""
         raise NotImplementedError('convert method not implemented')
 
     @classmethod
@@ -61,9 +66,11 @@ class EPUBSourceConversionTool(BaseSourceConversionTool):
 
     @staticmethod
     def convertible_types() -> list[str]:
+        """Return a list of file types that this tool can convert."""
         return ['application/epub+zip']
 
     def convert(self, source: str) -> str:
+        """Convert an EPUB file to Markdown."""
         output_path = self.converted_path(source)
         return self.convert_epub_advanced(source, output_path)
 
@@ -167,12 +174,16 @@ class EPUBSourceConversionTool(BaseSourceConversionTool):
 
 @attrs.define
 class SourceCollection:
+    """Class for source collection."""
+
     source_filepath: str
     embeddable_filepath: str | None = None
     source_metadata_filepath: str | None = None
 
 
 class SourceConverter:
+    """Class for converting sources."""
+
     raw_sources: Iterable[str] = None
     processed_sources: Iterable[SourceCollection] = None
     type_to_conversion_class: dict[str, SourceConversionTool] | None = None
@@ -188,31 +199,31 @@ class SourceConverter:
                 self.type_to_conversion_class[identifier] = conversion_tool
 
     def needs_conversion(self, source: str) -> bool:
+        """Check if a source needs conversion."""
         identifier = SourceIdentifier(source).identifier()
-        # print(f'file type identifier: {identifier}')
         return identifier not in ['text/plain']
 
     def is_convertible(self, source: str) -> bool:
+        """Check if a source is convertible."""
         identifier = SourceIdentifier(source).identifier()
-        # print(f'file type identifier: {identifier}')
         return identifier in self.type_to_conversion_class
 
     def convert(self, source: str) -> str:
+        """Convert a source file."""
         converter_class = self.type_to_conversion_class[
             SourceIdentifier(source).identifier()
         ]
         return converter_class().convert(source)
 
     def ingestion_ready_sources(self) -> list[SourceCollection]:
+        """Return list of source collections that can be ingested."""
         if self.processed_sources:
             return self.processed_sources
 
         self.processed_sources = []
         converter = SourceConverter()
-        # print(f'raw sources: {self.raw_sources}')
         for file in self.raw_sources:
             if not converter.needs_conversion(file):
-                # print(f'adding unconverted file: {file}')
                 self.processed_sources.append(
                     SourceCollection(
                         source_filepath=file, embeddable_filepath=file
@@ -220,7 +231,6 @@ class SourceConverter:
                 )
                 continue
             if converter.is_convertible(file):
-                # print(f'adding converted file: {file}')
                 converted_file = converter.convert(file)
                 self.processed_sources.append(
                     SourceCollection(

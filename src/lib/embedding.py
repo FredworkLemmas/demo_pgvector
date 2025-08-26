@@ -1,6 +1,5 @@
-from typing import Iterator
-
 import attrs
+from typing import Iterator
 import numpy as np
 from transformers import AutoTokenizer
 from vllm import SamplingParams
@@ -13,7 +12,6 @@ from lib.llms import LLMManager
 class DeepseekQwen15BEmbeddingGenerator(EmbeddingGenerator):
     texts: Iterator[str]
     model_name: str | None = None
-    # llm: LLM | None = None
     tokenizer: AutoTokenizer | None = None
     embedding_dim: int | None = None
 
@@ -27,6 +25,7 @@ class DeepseekQwen15BEmbeddingGenerator(EmbeddingGenerator):
         )
 
     def generate(self) -> Iterator[list[float]]:
+        """Generate embeddings for each text in the collection"""
         for text in self.texts:
             # Create a prompt that encourages the model to process the text
             # meaningfully
@@ -44,9 +43,7 @@ class DeepseekQwen15BEmbeddingGenerator(EmbeddingGenerator):
             )
 
             # Generate response to engage the model's understanding
-            # print('>>>>>>AAAAAAAAAAAA')
             llm = LLMManager(model_name=self.model_name).instance()
-            # print('>>>>>>ZZZZZZZZZZZZ')
             outputs = llm.generate([prompt], sampling_params)
 
             # For now, we'll create embeddings based on the text and response

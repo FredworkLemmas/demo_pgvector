@@ -5,7 +5,10 @@ from .interfaces import SettingsProvider
 
 
 class DemoSettingsProvider(SettingsProvider):
+    """Settings provider for demo."""
+
     def get_settings(self) -> dict:
+        """Get settings from environment or settings.yaml"""
         settings_file = (
             os.environ['SETTINGS_YAML']
             if 'SETTINGS_YAML' in os.environ
