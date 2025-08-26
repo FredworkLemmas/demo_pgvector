@@ -9,6 +9,8 @@ from .interfaces import PostgresqlConnectionProvider, SettingsProvider
 
 @attrs.define
 class PgvectorDatabaseConnectionProvider(PostgresqlConnectionProvider):
+    """Simple class to provide a database connection."""
+
     host: str
     port: int
     database: str
@@ -38,11 +40,14 @@ class PgvectorDatabaseConnectionProvider(PostgresqlConnectionProvider):
 
 
 class SimpleVectorDatabase:
+    """Simple db interface for storing source chunks and their embeddings."""
+
     def __init__(self, connection_provider: PostgresqlConnectionProvider):
         self.connection_provider = connection_provider
 
     @classmethod
     def from_settings_provider(cls, settings_provider: SettingsProvider):
+        """Initialize the database from a settings provider."""
         connection_provider = (
             PgvectorDatabaseConnectionProvider.from_settings_provider(
                 settings_provider
@@ -53,6 +58,7 @@ class SimpleVectorDatabase:
     def create_or_lookup_model_id(
         self, model_name: str, embedding_dim: int = 1536
     ) -> int:
+        """Create or lookup a model id based on the model name."""
         # get connection
         conn = self.connection_provider.get_connection()
         cursor = conn.cursor()
@@ -216,6 +222,7 @@ class SimpleVectorDatabase:
         text: str,
         metadata: dict = None,
     ):
+        """Insert a source chunk into the database."""
         # Validate embedding dimension (table uses vector(1536))
         if embedding is None or not isinstance(embedding, (list, tuple)):
             raise ValueError('embedding must be a list or tuple of floats')

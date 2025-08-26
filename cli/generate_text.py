@@ -1,3 +1,5 @@
+"""A click script for generating text using an LLM and a vector database."""
+
 import sys
 import click
 from vllm import SamplingParams

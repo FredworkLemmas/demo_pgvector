@@ -1,5 +1,7 @@
+--- load vector extension
 CREATE EXTENSION IF NOT EXISTS vector;
 
+--- create models table
 CREATE TABLE models (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255),
@@ -7,6 +9,7 @@ CREATE TABLE models (
 );
 CREATE INDEX IF NOT EXISTS idx_models_name ON models (name);
 
+--- create sources table
 CREATE TABLE sources (
     id SERIAL PRIMARY KEY,
     author TEXT,
@@ -20,13 +23,13 @@ CREATE TABLE sources (
     UNIQUE (model_id, author, title, year)
 );
 
+--- create source chunks tables
 CREATE TABLE source_chunks (
     id BIGSERIAL PRIMARY KEY,
     source_id INTEGER REFERENCES sources(id),
     model_id INTEGER REFERENCES models(id),
     embedding vector(1536)
 );
-
 CREATE TABLE source_chunk_data (
     id BIGSERIAL PRIMARY KEY,
     chunk_id INTEGER REFERENCES source_chunks(id),
