@@ -94,33 +94,7 @@ The relevant bits of a TON of output are:
 
 . . .
 
-looking for metdata file: /files/lets-get-together.epub.meta.yml
-...loading metadatafile
-source doc metadata: {'author': 'Isaac Asimov', 'title': "Let's Get Together", 'text_type': 'short story', 'genre': 'science fiction', 'publication_date': 1956}
-
-. . .
-
-looking for metdata file: /files/there-will-be-school-tomorrow.epub.meta.yml
-...loading metadatafile
-source doc metadata: {'author': 'V. E. Thiessen', 'title': 'There Will Be School Tomorrow', 'text_type': 'short story', 'genre': 'science fiction', 'publication_date': 1956}
-
-. . .
-
-looking for metdata file: /files/robots-of-the-world-arise.epub.meta.yml
-...loading metadatafile
-source doc metadata: {'author': 'Mari Wolf', 'title': 'Robots of the World! Arise!', 'text_type': 'short story', 'genre': 'science fiction', 'publication_date': 1952}
-
-. . .
-
-looking for metdata file: /files/second-variety.epub.meta.yml
-...loading metadatafile
-source doc metadata: {'author': 'Philip K. Dick', 'title': 'Second Variety', 'text_type': 'novella', 'genre': 'science fiction', 'publication_date': 1953}
-
-. . .
-
-looking for metdata file: /files/after-worlds-end.epub.meta.yml
-...loading metadatafile
-source doc metadata: {'author': 'Jack Williamson', 'title': "After World's End", 'text_type': 'novella', 'genre': 'science fiction', 'publication_date': 1939}
+    [ TONS OF OUTPUT ]
 
 . . .
 
