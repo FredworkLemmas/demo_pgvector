@@ -118,7 +118,7 @@ def search_demo_data(c, prompt, model=None, limit=10, threshold=0.7):
         ),
     },
 )
-def generate_demo_data(c, prompt, model=None):
+def generate_text(c, prompt, model=None):
     model = model or 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
 
     opts = [
@@ -142,3 +142,27 @@ def purge_db(c):
 def purge_vllm_cache(c):
     """Purge all data from PostgreSQL database"""
     c.run('docker volume rm model_cache')
+
+
+@task(namespace='example', name='load_and_query_1')
+def run_example(c):
+    # purge database
+    c.run('nv env.start')
+    c.run('nv purge.db')
+    c.run('nv env.stop')
+    c.run('nv env.start')
+
+    # import epub files to vector database
+    epub_files = [
+        f
+        for f in os.listdir('examples')
+        if os.path.isfile(os.path.join('examples', f))
+        and f.lower().endswith('.epub')
+    ]
+    file_opts = ' '.join([f'--file examples/{f}' for f in epub_files])
+    c.run(f'nv demo.import {file_opts}')
+
+    c.run(
+        'nv demo.generate -p '
+        '"Are robots generally friendly to humans? If not, why not?"'
+    )

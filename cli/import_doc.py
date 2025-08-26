@@ -4,15 +4,12 @@
 import sys
 import click
 
+from lib.constants import DEFAULT_MODEL, DEFAULT_EMBEDDING_DIM
 from lib.database import SimpleVectorDatabase
 from lib.documents import SourceDocument
 from lib.embedding import DeepseekQwen15BEmbeddingGenerator
 from lib.settings import DemoSettingsProvider
 from lib.sources import SourceConverter
-
-DEFAULT_MODEL = 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
-EMBEDDING_DIM = 1536
-INTERNAL_WORKDIR = '/work'
 
 
 @click.command(help='Import demo data into PostgreSQL database')
@@ -45,11 +42,11 @@ def main(files: tuple[str, ...], model: str) -> None:
     # init converter
     converter = SourceConverter(sources=list(files))
 
-    for file in converter.ingestion_ready_sources():
+    for source in converter.ingestion_ready_sources():
         # init document
         document = SourceDocument(
-            source_filepath=file,
-            max_chunk_tokens=EMBEDDING_DIM,
+            source=source,
+            max_chunk_tokens=DEFAULT_EMBEDDING_DIM,
             database=vector_database,
         )
 
@@ -60,7 +57,7 @@ def main(files: tuple[str, ...], model: str) -> None:
             DeepseekQwen15BEmbeddingGenerator(
                 texts=ordered_texts,
                 model_name=model,
-                embedding_dim=EMBEDDING_DIM,
+                embedding_dim=DEFAULT_EMBEDDING_DIM,
             ).generate()
         )
         for i, chunk in enumerate(ordered_chunks):

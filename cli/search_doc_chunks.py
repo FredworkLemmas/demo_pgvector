@@ -4,12 +4,10 @@
 import click
 import sys
 
+from lib.constants import DEFAULT_MODEL, DEFAULT_EMBEDDING_DIM
 from lib.database import SimpleVectorDatabase
 from lib.embedding import DeepseekQwen15BEmbeddingGenerator
 from lib.settings import DemoSettingsProvider
-
-DEFAULT_MODEL = 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
-DEFAULT_EMBEDDING_DIM = 1536
 
 
 @click.command(help='Search for document chunks similar to a given prompt')
@@ -23,14 +21,6 @@ DEFAULT_EMBEDDING_DIM = 1536
     default=DEFAULT_MODEL,
     show_default=True,
     help='Model to use for generating embeddings',
-)
-@click.option(
-    '--embedding-dim',
-    'embedding_dim',
-    default=DEFAULT_EMBEDDING_DIM,
-    show_default=True,
-    type=int,
-    help='Embedding dimension to use',
 )
 @click.option(
     '--top-k',
@@ -51,7 +41,6 @@ DEFAULT_EMBEDDING_DIM = 1536
 def main(
     prompt: str,
     model: str,
-    embedding_dim: int,
     top_k: int,
     similarity_threshold: float,
 ) -> None:
@@ -79,7 +68,7 @@ def main(
         embedding_generator = DeepseekQwen15BEmbeddingGenerator(
             texts=[prompt],
             model_name=model,
-            embedding_dim=embedding_dim,
+            embedding_dim=DEFAULT_EMBEDDING_DIM,
         )
 
         # Get the embedding for the prompt

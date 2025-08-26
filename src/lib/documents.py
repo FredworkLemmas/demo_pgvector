@@ -14,6 +14,7 @@ from docling_core.transforms.chunker.tokenizer.huggingface import (
 
 if typing.TYPE_CHECKING:
     from lib.database import SimpleVectorDatabase
+    from lib.sources import SourceCollection
 
 MAX_CHUNK_TOKENS = 512
 TEXT_TYPE__FICTION = 1
@@ -23,7 +24,7 @@ TEXT_TYPE__NONFICTION = 2
 @attrs.define
 class SourceDocument(object):
     database: 'SimpleVectorDatabase'
-    source_filepath: str
+    source: typing.Optional[typing.Union['SourceCollection', None]] = None
     metadata: dict | None = None
     chunker_class: type[BaseChunker] | None = None
     max_chunk_tokens: int | None = None
@@ -46,6 +47,7 @@ class SourceDocument(object):
         self.source_id = self.database.create_or_lookup_source(self)
 
     def enriched_chunks(self):
+        print(f'source doc metadata: {self.metadata}')
         import_date = datetime.datetime.now().isoformat()
         for n, chunk in enumerate(self._raw_chunk_iterator()):
             yield SourceDocumentChunk(
@@ -75,18 +77,21 @@ class SourceDocument(object):
 
     def _as_docling_document(self):
         # Validate that the file exists
-        if not Path(self.source_filepath).exists():
-            raise FileNotFoundError(f'File not found: {self.source_filepath}')
+        embeddable_filepath = self.source.embeddable_filepath
+        if not Path(embeddable_filepath).exists():
+            raise FileNotFoundError(f'File not found: {embeddable_filepath}')
         return (
             DocumentConverter()
-            .convert(source=Path(self.source_filepath))
+            .convert(source=Path(embeddable_filepath))
             .document
         )
 
     def _metadata_from_file(self):
-        p = Path(self.source_filepath)
+        p = Path(self.source.source_filepath)
         metadata_path = p.with_name(p.name + '.meta.yml')
+        print(f'looking for metdata file: {metadata_path}')
         if metadata_path.exists():
+            print('...loading metadatafile')
             return yaml.safe_load(metadata_path.read_text())
         return {}
 
